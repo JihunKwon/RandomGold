@@ -20,11 +20,14 @@ public:
 
     void GeneratePrimaries(G4Event* event);
 
-    G4SPSEneDistribution* setEnergyToBeta();
+    //G4SPSEneDistribution* setEnergyToBeta();
+
+    const G4ParticleGun* GetParticleGun() const { return fParticleGun; } // Simple Particle
 
 private:
     //G4IAEAphspReader* IAEAReader;
-     G4SingleParticleSource* CircleSource;
+     //G4SingleParticleSource* CircleSource;
+    G4ParticleGun* fParticleGun;
 };
 
 #endif

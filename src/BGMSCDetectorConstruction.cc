@@ -51,14 +51,14 @@ G4VPhysicalVolume* BGMSCDetectorConstruction::Construct()
     G4Material* water = nistManager->FindOrBuildMaterial("G4_WATER");
 
     // World
-    G4Box* world = new G4Box("World", 1.*um, 1.*um, 1.*um);   //halfx=0.05um
+    G4Box* world = new G4Box("World", 0.5*um, 0.5*um, 0.5*um);   //halfx=0.05um
     G4LogicalVolume *worldLogic = new G4LogicalVolume(world, water, "WorldLogic");
     G4VPhysicalVolume *worldPhys = new G4PVPlacement(0, G4ThreeVector(), worldLogic, "WorldPhys", 0, false, 0);
     worldLogic->SetVisAttributes(visAttributes);
 
-    G4Sphere *nanoPart = new G4Sphere("NanoPart", 0, 10*nm, 0*deg, 360*deg, 0*deg, 180*deg);
+    G4Sphere *nanoPart = new G4Sphere("NanoPart", 0, 25*nm, 0*deg, 360*deg, 0*deg, 180*deg);
     G4LogicalVolume *nanoPartLogic = new G4LogicalVolume(nanoPart, Au, "NanoPartLogic");
-    new G4PVPlacement(0, G4ThreeVector(0, 0, 60*nm), nanoPartLogic, "NanoPartPhys", worldLogic, 0, 0);
+    new G4PVPlacement(0, G4ThreeVector(0, 0, 45*nm), nanoPartLogic, "NanoPartPhys", worldLogic, 0, 0); // (-490*nm, -490*nm, -490*nm)
     //visAttributes = new G4VisAttributes(G4Colour(1.0, 1.0, 0.0));
     nanoPartLogic->SetVisAttributes(visAttributes);
 
