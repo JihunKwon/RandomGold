@@ -22,7 +22,11 @@
 #include "G4Sphere.hh"
 #include "G4UserLimits.hh"
 
+#define radius 5 // Half of diameter!!
+#define distance 100 //Distance between SourceGNP and BystanderGNP
+
 using namespace CLHEP;
+
 
 BGMSCDetectorConstruction::BGMSCDetectorConstruction()
     :fStepLimit(NULL)
@@ -56,28 +60,29 @@ G4VPhysicalVolume* BGMSCDetectorConstruction::Construct()
     G4VPhysicalVolume *worldPhys = new G4PVPlacement(0, G4ThreeVector(), worldLogic, "WorldPhys", 0, false, 0);
     worldLogic->SetVisAttributes(visAttributes);
 
-    G4Sphere *nanoPart = new G4Sphere("NanoPart", 0, 25*nm, 0*deg, 360*deg, 0*deg, 180*deg);
-    G4LogicalVolume *nanoPartLogic = new G4LogicalVolume(nanoPart, Au, "NanoPartLogic");
-    new G4PVPlacement(0, G4ThreeVector(0, 0, 45*nm), nanoPartLogic, "NanoPartPhys", worldLogic, 0, 0); // (-490*nm, -490*nm, -490*nm)
+    // Nano Tubs
+    G4Tubs* nanoTubs = new G4Tubs("NanoTubs", 0*nm, radius*nm, radius*nm, 0*deg, 360*deg);
+    G4LogicalVolume *nanoTubsLogic = new G4LogicalVolume(nanoTubs, Au, "NanoTubsLogic");
+    new G4PVPlacement(0, G4ThreeVector(0, 0, (2*radius+distance)*nm), nanoTubsLogic, "NanoTubsPhys", worldLogic, 0, 0);// (-490*nm, -490*nm, -490*nm) (0, 0, (2*radius+distance)*nm)
     //visAttributes = new G4VisAttributes(G4Colour(1.0, 1.0, 0.0));
-    nanoPartLogic->SetVisAttributes(visAttributes);
+    nanoTubsLogic->SetVisAttributes((visAttributes));
 
 //    // Pseudo disc source
-//    G4Tubs* DiscSource = new G4Tubs("DiscSource", 0, 10*nm, 1.0*nm, 0*deg, 360*deg);
+//    G4Tubs* DiscSource = new G4Tubs("DiscSource", 0, radius*nm, 1.0*nm, 0*deg, 360*deg);
 //    G4LogicalVolume *DiscSourceLogic = new G4LogicalVolume(DiscSource, vacuum, "DiscSourceLogic");
-//    new G4PVPlacement(0, G4ThreeVector(0, 0, -11*nm), DiscSourceLogic,"DiscSourcePhys", worldLogic, 0, 0);
+//    new G4PVPlacement(0, G4ThreeVector(0, 0, -(radius+1)*nm), DiscSourceLogic,"DiscSourcePhys", worldLogic, 0, 0);
 //    DiscSourceLogic->SetVisAttributes(visAttributes);
 
 //    // Bystander GNP
-//    G4Sphere *nanoPart2 = new G4Sphere("NanoPart2", 0, 10*nm, 0*deg, 360*deg, 0*deg, 180*deg);
+//    G4Tubs *nanoPart2 = new G4Tubs("NanoPart2", 0, radius*nm, radius*nm, 0*deg, 360*deg);
 //    G4LogicalVolume *nanoPart2Logic = new G4LogicalVolume(nanoPart2, Au, "NanoPart2Logic");
-//    new G4PVPlacement(0, G4ThreeVector(0, 0, 30*nm), nanoPart2Logic, "NanoPart2Phys", worldLogic, 0, 0);
+//    new G4PVPlacement(0, G4ThreeVector(0, 0, 3*radius*nm), nanoPart2Logic, "NanoPart2Phys", worldLogic, 0, 0);
 //    //visAttributes = new G4VisAttributes(G4Colour(1.0, 1.0, 0.0));
 //    nanoPart2Logic->SetVisAttributes(visAttributes);
 
     G4double maxStep = 1*nm;
     fStepLimit = new G4UserLimits(maxStep);
-    nanoPartLogic->SetUserLimits(fStepLimit);
+    //nanoTubsLogic->SetUserLimits(fStepLimit);
 
     return worldPhys;
 }

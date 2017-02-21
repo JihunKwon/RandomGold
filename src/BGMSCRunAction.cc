@@ -9,13 +9,12 @@
 #include "G4CsvAnalysisManager.hh"
 #include "G4IAEAphspWriter.hh"
 
-#include "G4CsvAnalysisManager.hh"
-
 #include <fstream>
 #include <sstream>
 #include <iostream>
 
 #define _USE_MATH_DEFINES
+#define radius 5 // Half of diameter!!
 
 BGMSCRunAction::BGMSCRunAction() : G4UserRunAction()
 {}
@@ -27,14 +26,14 @@ void BGMSCRunAction::BeginOfRunAction(const G4Run* aRun)
 {
     G4cout << "### Run " << aRun->GetRunID() << " start." << G4endl;
     G4IAEAphspWriter* Writer = G4IAEAphspWriter::GetInstance();
-    //Writer->SetZStop(60*nm);
-    Writer->SetRadius(25*nm);
+    //Writer->SetZStop(-1*mm);
+    Writer->SetRadius(radius*nm);
     std::vector<double>* a = Writer->GetZStopVector();
     Writer->BeginOfRunAction(aRun);
 
     G4CsvAnalysisManager* analysisManager = G4CsvAnalysisManager::Instance();
     G4cout << " Histogram id is " <<
-              analysisManager->CreateH1("Stokes", "Energy Eistribution of electron", 2500., 0., 250.) << G4endl;
+              analysisManager->CreateH1("Stokes", "Energy Eistribution of gamma", 1500., 0., 1500.) << G4endl; //...Bin number, MinE, MaxE
 }
 
 void BGMSCRunAction::EndOfRunAction(const G4Run* aRun)

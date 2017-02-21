@@ -58,6 +58,8 @@
 
 #include "G4IAEAphspWriter.hh"
 
+#define radius 5
+
 G4IAEAphspWriter * G4IAEAphspWriter::theInstance = 0;
 
 G4IAEAphspWriter * G4IAEAphspWriter::GetInstance()
@@ -93,10 +95,9 @@ G4IAEAphspWriter::G4IAEAphspWriter()
     theIncrNumberVector = new std::vector<G4int>;
     thePassingTracksVector = new std::vector< std::set<G4int>* >;
     theFilesAlreadyOpen = 0;
-    //Energy[15] = {10};
-    for (int i = 0; i < 2500; i++){
-        Energy[i] = {0};
-    }
+//    for (int i = 0; i < 2500; i++){
+//        Energy[i] = {0};
+//    }
 }
 
 
@@ -265,16 +266,16 @@ void G4IAEAphspWriter::UserSteppingAction(const G4Step* aStep)
     if ((aStep->GetTrack()->GetVolume()->GetName() == "NanoPartPhys")&&
         (aStep->IsLastStepInVolume()) && (i < size)&& (aStep->GetTrack()->GetParticleDefinition()->GetParticleName() == "e-"))
     {
-        G4double eEnergy = aStep->GetPostStepPoint()->GetKineticEnergy()/keV;
-        G4int j;
+//        G4double eEnergy = aStep->GetPostStepPoint()->GetKineticEnergy()/keV;
+//        G4int j;
 
-        for (int j = 0; j < 2500; j++){
-            if ((0.1*j < eEnergy) && (eEnergy <= 0.1*(j+1)))
-            {
-                Energy[j] = Energy[j] + 1;
-                break;
-            }
-        }
+//        for (int j = 0; j < 2500; j++){
+//            if ((0.1*j < eEnergy) && (eEnergy <= 0.1*(j+1)))
+//            {
+//                Energy[j] = Energy[j] + 1;
+//                break;
+//            }
+//        }
 
 
 
@@ -427,8 +428,8 @@ void G4IAEAphspWriter::EndOfRunAction(const G4Run* )
 
     thePassingTracksVector->clear();
 
-    std::ofstream WriteEnergy("Electron_EnergyDistribution_BeforeBy.txt");
-    for (int k = 0; k < 2500; k++){
-        WriteEnergy << k << " " << Energy[k] << "\n";
-    }
+//    std::ofstream WriteEnergy("Electron_EnergyDistribution_BeforeBy.txt");
+//    for (int k = 0; k < 2500; k++){
+//        WriteEnergy << k << " " << Energy[k] << "\n";
+//    }
 }
