@@ -40,6 +40,9 @@ private:
     G4double Edepout;
     G4double SelfAbsE;
     G4double SelfAbsG;
+
+    G4int InEnergy[200];
+    G4int OutEnergy[200];
 };
 
 #endif
