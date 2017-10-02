@@ -24,16 +24,8 @@ BGMSCRunAction::~BGMSCRunAction()
 void BGMSCRunAction::BeginOfRunAction(const G4Run* aRun)
 {
     G4cout << "### Run " << aRun->GetRunID() << " start." << G4endl;
-    G4CsvAnalysisManager* analysisManager = G4CsvAnalysisManager::Instance();
-    analysisManager->CreateH1("Enter", "Energy Eistribution of entering e-", 500., 0., 100.); //...Bin number, MinE, MaxE
-    analysisManager->CreateH1("Escape", "Energy Eistribution of escaping e-", 500., 0., 100.); //...Bin number, MinE, MaxE
 }
 
 void BGMSCRunAction::EndOfRunAction(const G4Run* aRun)
 {
-    G4CsvAnalysisManager* analysisManager = G4CsvAnalysisManager::Instance();
-    analysisManager->Write();
-    analysisManager->CloseFile();
-
-    //delete G4CsvAnalysisManager::Instance(); // required?
 }

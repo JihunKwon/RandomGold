@@ -26,21 +26,96 @@
 #include "math.h"
 using namespace CLHEP;
 
+/*
+20nm
+10mg 388199
+15mg 582298
+20mg 776398
+30mg 1164596
+40mg 1552795
+50mg 1940994
+ *
+100nm
+10mg 3106
+15mg 4658
+20mg 6211
+30mg 9317
+40mg 12422
+50mg 15528
+*/
 ///////////////////////////////////////////////////////////////////
-#define CELL_SIDE (12.6 * um)
-#define CLUSTER_SIDE (4.6 * um)
-#define VESICLE_COUNT 164
-#define VESICLE_DIAM (260 * nm)
-#define GNP_DIAM (50 * nm) // diameter!!
-#define GNP_COUNT 1000
+#define WORLD_SIDE (100. * um) // 100 for 8HPI
+//#define WORLD_SIDE (25. * um) for no HPI study
+#define VESSEL_OUTER_DIAM (20.0 * um)
+#define VESSEL_INNER_DIAM (16.0 * um)
+#define VESSEL_HIGHT (10.0 * um)
+#define GNP_DIAM (100 * nm) // diameter!!
+#define GNP_COUNT 3106// Number! 15528*0.7176=11143
+#define CELL_COUNT 30
+#define SHELL1_DIAM (20.0 * um)
+#define SHELL2_DIAM (40.0 * um)
+#define SHELL3_DIAM (60.0 * um)
+#define SHELL4_DIAM (80.0 * um)
+#define SHELL5_DIAM (100.0 * um)
+
+
+//4HPI
+#define SHELL_FRC20NM_4HPI_0_10 0.6345
+#define SHELL_FRC20NM_4HPI_10_20 0.2886
+#define SHELL_FRC20NM_4HPI_20_30 0.0657
+#define SHELL_FRC20NM_4HPI_30_40 0.0100
+#define SHELL_FRC20NM_4HPI_40_50 0.0011
+#define SHELL_FRC100NM_4HPI_0_10 0.7180
+#define SHELL_FRC100NM_4HPI_10_20 0.2379
+#define SHELL_FRC100NM_4HPI_20_30 0.0394
+#define SHELL_FRC100NM_4HPI_30_40 0.0044
+#define SHELL_FRC100NM_4HPI_40_50 0.0004
+
+//8HPI
+#define SHELL_FRC20NM_8HPI_0_10 0.4026
+#define SHELL_FRC20NM_8HPI_10_20 0.2517
+#define SHELL_FRC20NM_8HPI_20_30 0.1507
+#define SHELL_FRC20NM_8HPI_30_40 0.1037
+#define SHELL_FRC20NM_8HPI_40_50 0.0913
+#define SHELL_FRC100NM_8HPI_0_10 0.5155
+#define SHELL_FRC100NM_8HPI_10_20 0.3039
+#define SHELL_FRC100NM_8HPI_20_30 0.0803
+#define SHELL_FRC100NM_8HPI_30_40 0.0539
+#define SHELL_FRC100NM_8HPI_40_50 0.0464
+
+//16HPI
+#define SHELL_FRC20NM_16HPI_0_10 0.1621
+#define SHELL_FRC20NM_16HPI_10_20 0.2949
+#define SHELL_FRC20NM_16HPI_20_30 0.2683
+#define SHELL_FRC20NM_16HPI_30_40 0.1628
+#define SHELL_FRC20NM_16HPI_40_50 0.0740
+#define SHELL_FRC100NM_16HPI_0_10 0.2658
+#define SHELL_FRC100NM_16HPI_10_20 0.3522
+#define SHELL_FRC100NM_16HPI_20_30 0.2333
+#define SHELL_FRC100NM_16HPI_30_40 0.1031
+#define SHELL_FRC100NM_16HPI_40_50 0.0341
+
+//24HPI
+#define SHELL_FRC20NM_24HPI_0_10 0.0652
+#define SHELL_FRC20NM_24HPI_10_20 0.1781
+#define SHELL_FRC20NM_24HPI_20_30 0.2431
+#define SHELL_FRC20NM_24HPI_30_40 0.2212
+#define SHELL_FRC20NM_24HPI_40_50 0.1509
+#define SHELL_FRC100NM_24HPI_0_10 0.1370
+#define SHELL_FRC100NM_24HPI_10_20 0.2723
+#define SHELL_FRC100NM_24HPI_20_30 0.2707
+#define SHELL_FRC100NM_24HPI_30_40 0.1793
+#define SHELL_FRC100NM_24HPI_40_50 0.0891
+
 ///////////////////////////////////////////////////////////////////
 
 BGMSCDetectorConstruction::BGMSCDetectorConstruction()
     :fStepLimit(NULL)
 {
-    m_dCellSide = CELL_SIDE;
+    m_dWorldSide = WORLD_SIDE;
     m_nGnpCount = GNP_COUNT;
-    m_strDistribution = "Cluster";
+    m_strDistribution = "Constrained";   // Constrained  Random None 8HPI 24HPI
+    m_nCellCount = CELL_COUNT;
 }
 
 G4VPhysicalVolume* BGMSCDetectorConstruction::Construct()
@@ -51,9 +126,20 @@ G4VPhysicalVolume* BGMSCDetectorConstruction::Construct()
     G4LogicalVolumeStore::GetInstance()->Clean();
     G4SolidStore::GetInstance()->Clean();
 
-    G4VisAttributes* visAttributes = new G4VisAttributes;
-    visAttributes->SetForceWireframe(true);
-    visAttributes->SetForceAuxEdgeVisible(true);
+    G4VisAttributes* pVisAttributesEndotherial = new G4VisAttributes;
+    pVisAttributesEndotherial->SetForceWireframe(true);
+    pVisAttributesEndotherial->SetForceAuxEdgeVisible(true);
+    pVisAttributesEndotherial->SetForceSolid(true);
+    pVisAttributesEndotherial->SetVisibility(true);
+    pVisAttributesEndotherial->SetColor(1.0, 0.0, 0.0); // red
+
+//    G4VisAttributes* pVisAttributesShell = new G4VisAttributes;
+//    pVisAttributesShell->SetForceWireframe(true);
+//    pVisAttributesShell->SetForceAuxEdgeVisible(true);
+//    pVisAttributesShell->SetForceSolid(false);
+//    pVisAttributesShell->SetVisibility(true);
+//    pVisAttributesShell->SetColor(1.0, 1.0, 1.0); // cyan
+
 
     // Build materials
     G4NistManager* nistManager = G4NistManager::Instance();
@@ -61,22 +147,63 @@ G4VPhysicalVolume* BGMSCDetectorConstruction::Construct()
     G4Material* vacuum = nistManager->FindOrBuildMaterial("G4_Galactic");
     G4Material* water = nistManager->FindOrBuildMaterial("G4_WATER");
 
-    // Define Cell
-    G4Box* pCellBox = new G4Box("CellBox", CELL_SIDE/2, CELL_SIDE/2, CELL_SIDE/2);
-    G4LogicalVolume *pCellLogic = new G4LogicalVolume(pCellBox, water, "CellLog");
-    G4VPhysicalVolume *pCellPhys = new G4PVPlacement(0, G4ThreeVector(), pCellLogic, "CellLog", 0, false, 0);
+    // Define World
+    G4Box* pWorldBox = new G4Box("WorldBox", WORLD_SIDE/2, WORLD_SIDE/2, WORLD_SIDE/2);
+    G4LogicalVolume *pWorldLogic = new G4LogicalVolume(pWorldBox, water, "WorldLog");
+    G4VPhysicalVolume *pWorldPhys = new G4PVPlacement(0, G4ThreeVector(), pWorldLogic, "WorldPhys", 0, false, 0);
 
-    if (m_strDistribution == "Homogeneous")
+//    // Define Endotherial cell
+//    G4Tubs* pEndotherialTubs = new G4Tubs("EndotherialTubs", VESSEL_INNER_DIAM/2, VESSEL_OUTER_DIAM/2, VESSEL_HIGHT/2, 0*deg, 360*deg);
+//    G4LogicalVolume *pEndotherialLogic = new G4LogicalVolume(pEndotherialTubs, water, "EndotherialLog");
+//    G4VPhysicalVolume *pEndotherialPhys = new G4PVPlacement(0, G4ThreeVector(), pEndotherialLogic, "EndotherialPhys", pWorldLogic, 0, 0);
+//    pEndotherialLogic->SetVisAttributes(pVisAttributesEndotherial);
+
+//    // Psudo Shells
+//    for (int ShellNo = 1; ShellNo <= 5; ShellNo++)
+//    {
+//        G4Tubs* pShellTubs = new G4Tubs("ShellTubes", 0, VESSEL_OUTER_DIAM/2*ShellNo, VESSEL_HIGHT/2, 0*deg, 360*deg);
+//        G4LogicalVolume *pShellLogic = new G4LogicalVolume(pShellTubs, water, "ShellLog");
+//        G4VPhysicalVolume *pShellPhys = new G4PVPlacement(0, G4ThreeVector(), pShellLogic, "ShellPhys", pWorldLogic, 0, 0);
+//        pShellLogic->SetVisAttributes(pVisAttributesShell);
+//    }
+
+    // Parameterize each Endotherial cell.
+    for (int nCellIdx = 0; nCellIdx < m_nCellCount; nCellIdx++)
     {
-        DistributeGnpsRandom(pCellLogic);
+        G4RotationMatrix* rotm = new G4RotationMatrix;
+        rotm->rotateZ((nCellIdx+1) * 12*deg - 90*deg); //Set the first position 0 oclock., clock wise.
+                                                                                                                               /* Cell bin size */
+        G4Tubs* pEndotherialTubs = new G4Tubs("EndotherialTubs", VESSEL_INNER_DIAM/2, VESSEL_OUTER_DIAM/2, VESSEL_HIGHT/2, 0*deg, 12*deg); // Last deg is the size of cell!
+        G4LogicalVolume *pEndotherialLogic = new G4LogicalVolume(pEndotherialTubs, water, "EndotherialLog");
+        G4VPhysicalVolume *EndotherialPhys = new G4PVPlacement(rotm, G4ThreeVector(), pEndotherialLogic, "EndotherialPhys", pWorldLogic, 0, nCellIdx);
+        pEndotherialLogic->SetVisAttributes(pVisAttributesEndotherial);
     }
-    else if(m_strDistribution == "Cluster")
+
+    if (m_strDistribution == "Constrained")
     {
-        SVesicleInfo aryVesicleInfo[VESICLE_COUNT];
-        DistributeVesiclesInSphereCluster(pCellLogic, aryVesicleInfo);
-        DistributeGnpsInVesicles(pCellLogic, aryVesicleInfo);
+        DistributeGnpsSurface(pWorldLogic);
     }
-    else if(m_strDistribution == "None")
+    else if (m_strDistribution == "Random")
+    {
+        DistributeGnpsRandom(pWorldLogic);
+    }
+    else if (m_strDistribution == "4HPI")
+    {
+        DistributeGnps4HPI(pWorldLogic);
+    }
+    else if (m_strDistribution == "8HPI")
+    {
+        DistributeGnps8HPI(pWorldLogic);
+    }
+    else if (m_strDistribution == "16HPI")
+    {
+        DistributeGnps16HPI(pWorldLogic);
+    }
+    else if (m_strDistribution == "24HPI")
+    {
+        DistributeGnps24HPI(pWorldLogic);
+    }
+    else if (m_strDistribution == "None")
     {
     }
     else
@@ -87,15 +214,20 @@ G4VPhysicalVolume* BGMSCDetectorConstruction::Construct()
     G4double maxStep = 1*nm;
     fStepLimit = new G4UserLimits(maxStep);
 
-    return pCellPhys;
+    return pWorldPhys;
 }
 
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-///////////////////////////HOMOGENEOUS////////////////////////////////////////
-// Distribute GNP randomly in the cell (without vesicles).
-void BGMSCDetectorConstruction::DistributeGnpsRandom(G4LogicalVolume *pCellLog)
+///////////////////////////CONSTRAINED////////////////////////////////////////
+// Distribute GNP randomly on the inner surface of the blood vessel.
+void BGMSCDetectorConstruction::DistributeGnpsSurface(G4LogicalVolume *pWorldLogic)
 {
+    G4Material *pMaterialWater = G4NistManager::Instance()->FindOrBuildMaterial("G4_WATER");
+    G4Material *pMaterialGold = G4NistManager::Instance()->FindOrBuildMaterial("G4_Au");
+    assert(pMaterialWater != NULL);
+    assert(pMaterialGold != NULL);
+
     struct SGnpInfo
     {
         double dPosX;
@@ -104,9 +236,6 @@ void BGMSCDetectorConstruction::DistributeGnpsRandom(G4LogicalVolume *pCellLog)
     };
 
     SGnpInfo *aryGnpInfo = new SGnpInfo [m_nGnpCount];
-
-    G4Material *pMaterialGold = G4NistManager::Instance()->FindOrBuildMaterial("G4_Au");
-    assert(pMaterialGold != NULL);
 
     // Set visible attributes
     G4VisAttributes* pVisAttributes = new G4VisAttributes;
@@ -120,15 +249,17 @@ void BGMSCDetectorConstruction::DistributeGnpsRandom(G4LogicalVolume *pCellLog)
     G4Sphere* pGnpSphere = new G4Sphere("GNP", 0., GNP_DIAM / 2, 0*deg, 360*deg, 0*deg, 180*deg);
     G4LogicalVolume *pGnpLog = new G4LogicalVolume(pGnpSphere, pMaterialGold, "GNPLogic");
 
-    printf("Distributing GNPs randomly...");
+    printf("Distributing GNPs randomly...\n");
+    G4int ary[360]={0};
 
     for (int nGnpIdx = 0; nGnpIdx < m_nGnpCount; nGnpIdx++)
     {
         retry:
         // Compute a random position for the GNP
-        double dGnpX = (CELL_SIDE * G4UniformRand()) - CELL_SIDE/2.0; //set x between -6.3um and 6.3um
-        double dGnpY = (CELL_SIDE * G4UniformRand()) - CELL_SIDE/2.0;
-        double dGnpZ = (CELL_SIDE * G4UniformRand()) - CELL_SIDE/2.0;
+        double dTheta = G4UniformRand() * 360.*deg;
+        double dGnpX = ((VESSEL_INNER_DIAM/2.-GNP_DIAM/2) * cos(dTheta));
+        double dGnpY = ((VESSEL_INNER_DIAM/2.-GNP_DIAM/2) * sin(dTheta));
+        double dGnpZ = (VESSEL_HIGHT * G4UniformRand()) - VESSEL_HIGHT/2.0;
 
                 // Special case for one GNP at the center.
                 if (m_nGnpCount == 1)
@@ -161,125 +292,58 @@ void BGMSCDetectorConstruction::DistributeGnpsRandom(G4LogicalVolume *pCellLog)
                 }
                 printf("%d (%le, %le, %le)\n", nGnpIdx, dGnpX, dGnpY, dGnpZ);
 
+                G4double r = VESSEL_INNER_DIAM/2.;
+                G4double Cos = cos(dGnpX/r);
+                G4double theta = acos(Cos)*180/M_PI;
+//                if (dGnpX<0 && dGnpY>0) theta = theta+90; //2nd
+//                else if(dGnpX<0 && dGnpY<0) theta = theta+180; //3rd
+//                else if(dGnpX>0 && dGnpY<0) theta = theta+270; //4th
+
+                for (int i=0; i<60; i++)
+                {
+                    if((i<=theta) && (theta<(i+1)))
+                    {
+                        ary[i] += 1;
+                    }
+                }
+
                 int nCopyNumber = nGnpIdx; //Why?
 
-                new G4PVPlacement(0, G4ThreeVector(dGnpX, dGnpY, dGnpZ), pGnpLog, "GnpPhys", pCellLog, false, nCopyNumber);
+                new G4PVPlacement(0, G4ThreeVector(dGnpX, dGnpY, dGnpZ), pGnpLog, "GnpPhys", pWorldLogic, false, nCopyNumber);
 
                 pGnpLog->SetVisAttributes(pVisAttributes);
 
-                aryGnpInfo[nGnpIdx].dPosX = dGnpX; //Why?
+                aryGnpInfo[nGnpIdx].dPosX = dGnpX;
                 aryGnpInfo[nGnpIdx].dPosY = dGnpY;
                 aryGnpInfo[nGnpIdx].dPosZ = dGnpZ;
     }
+    FILE* fp =fopen("position.txt", "wt");
+    for (int i=0; i<60; i++)
+    {
+        printf("%d %d\n", i, ary[i]);
+        fprintf(fp, "%d %d\n", i, ary[i]);
+    }
+    fclose(fp);
     delete [] aryGnpInfo;
 }
 
-///////////////////////////CLUSTER////////////////////////////////////////
-void BGMSCDetectorConstruction::DistributeVesiclesInSphereCluster(G4LogicalVolume* pCellLog, SVesicleInfo aryVesicleInfo[])
+///////////////////////////RANDOM////////////////////////////////////////
+// Distribute GNP randomly in the blood vessel.
+void BGMSCDetectorConstruction::DistributeGnpsRandom(G4LogicalVolume *pWorldLogic)
 {
-    G4Material* pMaterialWater = G4NistManager::Instance()->FindOrBuildMaterial("G4_WATER"); //"G4_Au"
+    G4Material *pMaterialWater = G4NistManager::Instance()->FindOrBuildMaterial("G4_WATER");
+    G4Material *pMaterialGold = G4NistManager::Instance()->FindOrBuildMaterial("G4_Au");
     assert(pMaterialWater != NULL);
+    assert(pMaterialGold != NULL);
 
-    // Set visible attributes
-    G4VisAttributes* pVisClusterAttributes = new G4VisAttributes;
-    pVisClusterAttributes->SetForceWireframe(true);
-    pVisClusterAttributes->SetForceAuxEdgeVisible(true);
-    pVisClusterAttributes->SetForceSolid(false);
-    pVisClusterAttributes->SetVisibility(true);
-    pVisClusterAttributes->SetColor(1.0, 1.0, 1.0);
-
-    G4VisAttributes* pVisVesicleAttributes = new G4VisAttributes;
-    pVisVesicleAttributes->SetForceWireframe(true);
-    pVisVesicleAttributes->SetForceAuxEdgeVisible(true);
-    pVisVesicleAttributes->SetForceSolid(false);
-    pVisVesicleAttributes->SetVisibility(true);
-    pVisVesicleAttributes->SetColor(0.0, 1.0, 1.0);
-
-    double dClusterRadius = CLUSTER_SIDE / 2.;
-    double dClusterX = 0.0;
-    double dClusterY = 0.0;
-    double dClusterZ = 0.0;
-
-    for (int nVesicleIdx = 0; nVesicleIdx < VESICLE_COUNT; nVesicleIdx++)
-    {
-        retry:
-        // Generate a random point on the vesicle
-        double dTheta = G4UniformRand() * 360.*deg;
-        double dPhi = (180.*deg * G4UniformRand());
-        double dRho = dClusterRadius * G4UniformRand();
-        double dVesicleX = dClusterX + dRho*cos(dTheta)*sin(dPhi);
-        double dVesicleY = dClusterY + dRho*sin(dTheta)*sin(dPhi);
-        double dVesicleZ = dClusterZ + dRho*cos(dPhi);
-
-        // Check if this vesicle is over-lapping an existing vesicle.
-        for (int nExistingIdx = 0; nExistingIdx < nVesicleIdx; nExistingIdx++)
-        {
-            double dExistingX = aryVesicleInfo[nExistingIdx].dPosX;
-            double dExistingY = aryVesicleInfo[nExistingIdx].dPosY;
-            double dExistingZ = aryVesicleInfo[nExistingIdx].dPosZ;
-
-            double dx = dExistingX - dVesicleX;
-            double dy = dExistingY - dVesicleY;
-            double dz = dExistingZ - dVesicleZ;
-
-            double dDist = sqrt(dx*dx+dy*dy+dz*dz);
-            if(dDist <= VESICLE_DIAM)
-                goto retry;
-        }
-
-        // OK, this position is good!
-        printf("%d (%le, %le, %le)\n", nVesicleIdx, dVesicleX, dVesicleY, dVesicleZ);
-
-
-
-
-        ///////////////////////Visualization of cluster
-        G4Sphere* pClusterSphere = new G4Sphere("Cluster", 0, (CLUSTER_SIDE/2), 0.*deg, 360.*deg, 0.*deg, 180.*deg);
-        G4LogicalVolume* pClusterLog = new G4LogicalVolume(pClusterSphere, pMaterialWater, "Cluster");
-
-        G4RotationMatrix* rotm = new G4RotationMatrix;
-        rotm->rotateX(90*deg);
-
-        new G4PVPlacement(rotm, G4ThreeVector(0, 0, 0), pClusterLog, "Cluster", pCellLog, false, 0);
-
-        pClusterLog->SetVisAttributes(pVisClusterAttributes);
-        ///////////////////////Visualization of cluster
-
-        ///////////////////////Visualization of vesicles
-        G4Sphere* pVesicleSphere = new G4Sphere("Vesicle", 0, (VESICLE_DIAM/2), 0.*deg, 360.*deg, 0.*deg, 180.*deg);
-        G4LogicalVolume* pVesicleLog = new G4LogicalVolume(pVesicleSphere, pMaterialWater, "Vesicle");
-
-        int nCopyNumber = nVesicleIdx;
-        //G4RotationMatrix* rotm = new G4RotationMatrix;
-        rotm->rotateX(90*deg);
-
-        new G4PVPlacement(rotm, G4ThreeVector(dVesicleX, dVesicleY, dVesicleZ), pVesicleLog, "Vesicle", pCellLog, false, nCopyNumber);
-
-        pVesicleLog->SetVisAttributes(pVisVesicleAttributes);
-        ///////////////////////Visualization of vesicles
-
-
-        aryVesicleInfo[nVesicleIdx].dPosX = dVesicleX; //Pass the Vesicle Position to the array and in order to access from other functions.
-        aryVesicleInfo[nVesicleIdx].dPosY = dVesicleY;
-        aryVesicleInfo[nVesicleIdx].dPosZ = dVesicleZ;
-    }
-
-}
-
-void BGMSCDetectorConstruction::DistributeGnpsInVesicles(G4LogicalVolume *pCellLog, SVesicleInfo aryVesicleInfo[])
-{
     struct SGnpInfo
     {
         double dPosX;
         double dPosY;
         double dPosZ;
-        int nVesicleIdx;
     };
 
     SGnpInfo *aryGnpInfo = new SGnpInfo [m_nGnpCount];
-
-    G4Material *pMaterialGold = G4NistManager::Instance()->FindOrBuildMaterial("G4_Au");
-    assert(pMaterialGold != NULL);
 
     // Set visible attributes
     G4VisAttributes* pVisAttributes = new G4VisAttributes;
@@ -289,71 +353,1813 @@ void BGMSCDetectorConstruction::DistributeGnpsInVesicles(G4LogicalVolume *pCellL
     pVisAttributes->SetVisibility(true);
     pVisAttributes->SetColor(255. / 255., 215. / 255., 0.); // gold
 
+    // Create the Sphere object
+    G4Sphere* pGnpSphere = new G4Sphere("GNP", 0., GNP_DIAM / 2, 0*deg, 360*deg, 0*deg, 180*deg);
+    G4LogicalVolume *pGnpLog = new G4LogicalVolume(pGnpSphere, pMaterialGold, "GNPLogic");
+
+    printf("Distributing GNPs randomly...");
+
     for (int nGnpIdx = 0; nGnpIdx < m_nGnpCount; nGnpIdx++)
     {
         retry:
-        // Select a vesicle at random
-        int nVesicleIdx = int(G4UniformRand() * VESICLE_COUNT);
-        double dVesicleX = aryVesicleInfo[nVesicleIdx].dPosX;
-        double dVesicleY = aryVesicleInfo[nVesicleIdx].dPosY;
-        double dVesicleZ = aryVesicleInfo[nVesicleIdx].dPosZ;
+        // Compute a random position for the GNP
+        double dTheta = G4UniformRand() * 2*M_PI;
+        double dRand = G4UniformRand();
+        double dGnpX = (sqrt(dRand) * (VESSEL_INNER_DIAM/2.-GNP_DIAM/2) * cos(dTheta));
+        double dGnpY = (sqrt(dRand) * (VESSEL_INNER_DIAM/2.-GNP_DIAM/2) * sin(dTheta));
+        double dGnpZ = (VESSEL_HIGHT * G4UniformRand()) - VESSEL_HIGHT/2.0;
 
-        // Generate a random on the vesicle
-        // NOTE: Distribute throughout the vessicle, not only on surface.
-        double dTheta = G4UniformRand() * 360.*deg;
-        double dPhi = (180.*deg * G4UniformRand());
-        double dVesicleRadius = VESICLE_DIAM / 2. - GNP_DIAM / 2.; //Make sure the GNPs don't exeed the vesicle surface (GNP_DIAM/2)
-        double dGnpX = dVesicleX + dVesicleRadius*cos(dTheta)*sin(dPhi);
-        double dGnpY = dVesicleY + dVesicleRadius*sin(dTheta)*sin(dPhi);
-        double dGnpZ = dVesicleZ + dVesicleRadius*cos(dPhi);
+                // Special case for one GNP at the center.
+                if (m_nGnpCount == 1)
+                {
+                    dGnpX = 0.0;
+                    dGnpY = 0.0;
+                    dGnpZ = 0.0;
+                }
 
-        // Check if this GNP is over-lapping an exisitng GNP
-        for (int nExistingGnpIdx = 0; nExistingGnpIdx < nGnpIdx; nExistingGnpIdx++)
-        {
-            // Focus on the same vesicle
-            int nExistingVesicleIdx = aryGnpInfo[nExistingGnpIdx].nVesicleIdx;
-            if (nExistingVesicleIdx == nVesicleIdx)
-            {
-                double dExistingX = aryGnpInfo[nExistingGnpIdx].dPosX;
-                double dExistingY = aryGnpInfo[nExistingGnpIdx].dPosY;
-                double dExistingZ = aryGnpInfo[nExistingGnpIdx].dPosZ;
+                // Check if this GNP is over-lapping an existing GNP
+                for (int nExistingGnpIdx = 0; nExistingGnpIdx < nGnpIdx; nExistingGnpIdx++)
+                {
+                    double dExistingX = aryGnpInfo[nExistingGnpIdx].dPosX;
+                    double dExistingY = aryGnpInfo[nExistingGnpIdx].dPosY;
+                    double dExistingZ = aryGnpInfo[nExistingGnpIdx].dPosZ;
 
-                double dx = dExistingX - dGnpX;
-                double dy = dExistingY - dGnpY;
-                double dz = dExistingZ - dGnpZ;
+                    double dx = dExistingX - dGnpX;
+                    double dy = dExistingY - dGnpY;
+                    double dz = dExistingZ - dGnpZ;
 
-                // Don't bother computing sqrt if the distance is large on any axis.
-                if (fabs(dx) > GNP_DIAM) continue;
-                if (fabs(dy) > GNP_DIAM) continue;
-                if (fabs(dz) > GNP_DIAM) continue;
+                    // Don't bother computing sqrt if the distance is large on any axis.
+                    //if ((fabs(dx) <= GNP_DIAM) && (fabs(dy) <= GNP_DIAM) && (fabs(dz) <= GNP_DIAM))
+//                    if (fabs(dx) > GNP_DIAM) continue;
+//                    if (fabs(dy) > GNP_DIAM) continue;
+//                    if (fabs(dz) > GNP_DIAM) continue;
 
-                double dDist = sqrt(dx*dx+dy*dy+dz*dz);
-                if (dDist <= GNP_DIAM)
-                    goto retry;
-            }
+                    double dDist = sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dDist <= GNP_DIAM)
+                        goto retry;
+                }
+                printf("%d (%le, %le, %le)\n", nGnpIdx, dGnpX, dGnpY, dGnpZ);
 
-        }
-        printf("%d %d (%le, %le, %le)\n", nGnpIdx, nVesicleIdx, dGnpX, dGnpY, dGnpZ);
+                int nCopyNumber = nGnpIdx; //Why?
 
-        G4Sphere* pGnpSphere = new G4Sphere("GNP", 0., GNP_DIAM/2, 0*deg, 360*deg, 0*deg, 180*deg);
-        G4LogicalVolume *pGnpLog = new G4LogicalVolume(pGnpSphere, pMaterialGold, "GNPLogic");
+                new G4PVPlacement(0, G4ThreeVector(dGnpX, dGnpY, dGnpZ), pGnpLog, "GnpPhys", pWorldLogic, false, nCopyNumber);
 
-        int nCopyNumber = nGnpIdx;
+                pGnpLog->SetVisAttributes(pVisAttributes);
 
-        G4RotationMatrix* rotm = new G4RotationMatrix;
-        rotm->rotateX(180*deg);
-
-        new G4PVPlacement(0, G4ThreeVector(dGnpX, dGnpY, dGnpZ), pGnpLog, "GnpPhys", pCellLog, false, nCopyNumber);
-
-        pGnpLog->SetVisAttributes(pVisAttributes);
-
-        aryGnpInfo[nGnpIdx].dPosX = dGnpX;
-        aryGnpInfo[nGnpIdx].dPosY = dGnpY;
-        aryGnpInfo[nGnpIdx].dPosZ = dGnpZ;
-        aryGnpInfo[nGnpIdx].nVesicleIdx = nVesicleIdx;
+                aryGnpInfo[nGnpIdx].dPosX = dGnpX;
+                aryGnpInfo[nGnpIdx].dPosY = dGnpY;
+                aryGnpInfo[nGnpIdx].dPosZ = dGnpZ;
     }
     delete [] aryGnpInfo;
 }
+
+///////////////////////////4HPI////////////////////////////////////////
+// Distribute GNP with migration after 4 hour post injection (8HPI)
+void BGMSCDetectorConstruction::DistributeGnps4HPI(G4LogicalVolume *pWorldLogic)
+{
+    G4Material *pMaterialWater = G4NistManager::Instance()->FindOrBuildMaterial("G4_WATER");
+    G4Material *pMaterialGold = G4NistManager::Instance()->FindOrBuildMaterial("G4_Au");
+    assert(pMaterialWater != NULL);
+    assert(pMaterialGold != NULL);
+
+    struct SGnpInfo
+    {
+        double dPosX;
+        double dPosY;
+        double dPosZ;
+    };
+
+    SGnpInfo *aryGnpInfo = new SGnpInfo [m_nGnpCount];
+
+    // Set visible attributes
+    G4VisAttributes* pVisAttributesGold = new G4VisAttributes;
+    pVisAttributesGold->SetForceWireframe(true);
+    pVisAttributesGold->SetForceAuxEdgeVisible(true);
+    pVisAttributesGold->SetForceSolid(false);
+    pVisAttributesGold->SetVisibility(true);
+    pVisAttributesGold->SetColor(255. / 255., 215. / 255., 0.); // gold
+
+    // Create the Sphere object
+    G4Sphere* pGnpSphere = new G4Sphere("GNP", 0., GNP_DIAM / 2, 0*deg, 360*deg, 0*deg, 180*deg);
+    G4LogicalVolume *pGnpLog = new G4LogicalVolume(pGnpSphere, pMaterialGold, "GNPLogic");
+
+    printf("Distributing GNPs randomly...\n");
+    G4int ary[360]={0};
+
+    if (GNP_DIAM == 20 * nm)
+    {
+        for (int nGnpIdx = 0; nGnpIdx < m_nGnpCount; nGnpIdx++)
+        {
+            double dTheta, dRand, dGnpX, dGnpY, dGnpZ; //Declear to use at the end "fprintf()"
+            double dGnpR; // Radial Direction
+
+            G4int GNP_COUNT_0_10 = GNP_COUNT*SHELL_FRC20NM_4HPI_0_10;
+            G4int GNP_COUNT_10_20 = GNP_COUNT*SHELL_FRC20NM_4HPI_10_20;
+            G4int GNP_COUNT_20_30 = GNP_COUNT*SHELL_FRC20NM_4HPI_20_30;
+            G4int GNP_COUNT_30_40 = GNP_COUNT*SHELL_FRC20NM_4HPI_30_40;
+            G4int GNP_COUNT_40_50 = GNP_COUNT*SHELL_FRC20NM_4HPI_40_50;
+
+            if (0 <= nGnpIdx && nGnpIdx < GNP_COUNT_0_10) // Shell1
+            {
+                retry20_1:
+                // Compute a random position for the GNP
+                dTheta = G4UniformRand() * 2*M_PI;
+                dRand = G4UniformRand();
+                dGnpX = (sqrt(dRand) * (SHELL1_DIAM/2.-GNP_DIAM/2) * cos(dTheta));
+                dGnpY = (sqrt(dRand) * (SHELL1_DIAM/2.-GNP_DIAM/2) * sin(dTheta));
+                dGnpZ = (VESSEL_HIGHT * G4UniformRand()) - VESSEL_HIGHT/2.0;
+
+                // Check if this GNP is over-lapping an existing GNP
+                for (int nExistingGnpIdx = 0; nExistingGnpIdx < nGnpIdx; nExistingGnpIdx++)
+                {
+                    double dExistingX = aryGnpInfo[nExistingGnpIdx].dPosX;
+                    double dExistingY = aryGnpInfo[nExistingGnpIdx].dPosY;
+                    double dExistingZ = aryGnpInfo[nExistingGnpIdx].dPosZ;
+
+                    double dx = dExistingX - dGnpX;
+                    double dy = dExistingY - dGnpY;
+                    double dz = dExistingZ - dGnpZ;
+
+                    // Don't bother computing sqrt if the distance is large on any axis.
+                    //if ((fabs(dx) <= GNP_DIAM) && (fabs(dy) <= GNP_DIAM) && (fabs(dz) <= GNP_DIAM))
+                    if (fabs(dx) > GNP_DIAM) continue;
+                    if (fabs(dy) > GNP_DIAM) continue;
+                    if (fabs(dz) > GNP_DIAM) continue;
+
+                    double dDist = sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dDist <= GNP_DIAM)
+                        goto retry20_1;
+                }
+            }
+            else if (GNP_COUNT_0_10 <= nGnpIdx && nGnpIdx < (GNP_COUNT_0_10 + GNP_COUNT_10_20)) // Shell2
+            {
+                retry20_2:
+                // Compute a random position for the GNP
+                dTheta = G4UniformRand() * 2*M_PI;
+                dRand = G4UniformRand();
+                dGnpX = (sqrt(dRand) * (SHELL2_DIAM/2.-GNP_DIAM/2) * cos(dTheta));
+                dGnpY = (sqrt(dRand) * (SHELL2_DIAM/2.-GNP_DIAM/2) * sin(dTheta));
+                dGnpZ = (VESSEL_HIGHT * G4UniformRand()) - VESSEL_HIGHT/2.0;
+                dGnpR = sqrt(dGnpX*dGnpX + dGnpY*dGnpY)/um;
+                // Check if this GNP is in the inner shell
+                if (dGnpR <= SHELL1_DIAM/2.)
+                    goto retry20_2;
+
+                // Check if this GNP is over-lapping an existing GNP
+                for (int nExistingGnpIdx = 0; nExistingGnpIdx < nGnpIdx; nExistingGnpIdx++)
+                {
+                    double dExistingX = aryGnpInfo[nExistingGnpIdx].dPosX;
+                    double dExistingY = aryGnpInfo[nExistingGnpIdx].dPosY;
+                    double dExistingZ = aryGnpInfo[nExistingGnpIdx].dPosZ;
+
+                    double dx = dExistingX - dGnpX;
+                    double dy = dExistingY - dGnpY;
+                    double dz = dExistingZ - dGnpZ;
+
+                    double dDist = sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dDist <= GNP_DIAM)
+                        goto retry20_2;
+                }
+            }
+            else if ((GNP_COUNT_0_10 + GNP_COUNT_10_20) <= nGnpIdx &&
+                     nGnpIdx < (GNP_COUNT_0_10+GNP_COUNT_10_20+GNP_COUNT_20_30)) // Shell3
+            {
+                retry20_3:
+                // Compute a random position for the GNP
+                dTheta = G4UniformRand() * 2*M_PI;
+                dRand = G4UniformRand();
+                dGnpX = (sqrt(dRand) * (SHELL3_DIAM/2.-GNP_DIAM/2) * cos(dTheta));
+                dGnpY = (sqrt(dRand) * (SHELL3_DIAM/2.-GNP_DIAM/2) * sin(dTheta));
+                dGnpZ = (VESSEL_HIGHT * G4UniformRand()) - VESSEL_HIGHT/2.0;
+                // Check if this GNP is in the inner shell
+                if (dGnpR <= SHELL3_DIAM)
+                    goto retry20_3;
+
+                // Check if this GNP is over-lapping an existing GNP
+                for (int nExistingGnpIdx = 0; nExistingGnpIdx < nGnpIdx; nExistingGnpIdx++)
+                {
+                    double dExistingX = aryGnpInfo[nExistingGnpIdx].dPosX;
+                    double dExistingY = aryGnpInfo[nExistingGnpIdx].dPosY;
+                    double dExistingZ = aryGnpInfo[nExistingGnpIdx].dPosZ;
+
+                    double dx = dExistingX - dGnpX;
+                    double dy = dExistingY - dGnpY;
+                    double dz = dExistingZ - dGnpZ;
+
+                    // Don't bother computing sqrt if the distance is large on any axis.
+                    //if ((fabs(dx) <= GNP_DIAM) && (fabs(dy) <= GNP_DIAM) && (fabs(dz) <= GNP_DIAM))
+                    if (fabs(dx) > GNP_DIAM) continue;
+                    if (fabs(dy) > GNP_DIAM) continue;
+                    if (fabs(dz) > GNP_DIAM) continue;
+
+                    double dDist = sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dDist <= GNP_DIAM)
+                        goto retry20_3;
+                }
+            }
+            else if ((GNP_COUNT_0_10+GNP_COUNT_10_20+GNP_COUNT_20_30) <= nGnpIdx &&
+                     nGnpIdx < (GNP_COUNT_0_10+GNP_COUNT_10_20+GNP_COUNT_20_30+GNP_COUNT_30_40)) // Shell4
+            {
+                retry20_4:
+                // Compute a random position for the GNP
+                dTheta = G4UniformRand() * 2*M_PI;
+                dRand = G4UniformRand();
+                dGnpX = (sqrt(dRand) * (SHELL4_DIAM/2.-GNP_DIAM/2) * cos(dTheta));
+                dGnpY = (sqrt(dRand) * (SHELL4_DIAM/2.-GNP_DIAM/2) * sin(dTheta));
+                dGnpZ = (VESSEL_HIGHT * G4UniformRand()) - VESSEL_HIGHT/2.0;
+                // Check if this GNP is in the inner shell
+                if (dGnpR <= SHELL4_DIAM)
+                    goto retry20_4;
+
+                // Check if this GNP is over-lapping an existing GNP
+                for (int nExistingGnpIdx = 0; nExistingGnpIdx < nGnpIdx; nExistingGnpIdx++)
+                {
+                    double dExistingX = aryGnpInfo[nExistingGnpIdx].dPosX;
+                    double dExistingY = aryGnpInfo[nExistingGnpIdx].dPosY;
+                    double dExistingZ = aryGnpInfo[nExistingGnpIdx].dPosZ;
+
+                    double dx = dExistingX - dGnpX;
+                    double dy = dExistingY - dGnpY;
+                    double dz = dExistingZ - dGnpZ;
+
+                    // Don't bother computing sqrt if the distance is large on any axis.
+                    //if ((fabs(dx) <= GNP_DIAM) && (fabs(dy) <= GNP_DIAM) && (fabs(dz) <= GNP_DIAM))
+                    if (fabs(dx) > GNP_DIAM) continue;
+                    if (fabs(dy) > GNP_DIAM) continue;
+                    if (fabs(dz) > GNP_DIAM) continue;
+
+                    double dDist = sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dDist <= GNP_DIAM)
+                        goto retry20_4;
+                }
+            }
+            else if ((GNP_COUNT_0_10+GNP_COUNT_10_20+GNP_COUNT_20_30+GNP_COUNT_30_40) <= nGnpIdx &&
+                     nGnpIdx < (GNP_COUNT_0_10+GNP_COUNT_10_20+GNP_COUNT_20_30+GNP_COUNT_30_40+GNP_COUNT_40_50)) // Shell5
+            {
+                retry20_5:
+                // Compute a random position for the GNP
+                dTheta = G4UniformRand() * 2*M_PI;
+                dRand = G4UniformRand();
+                dGnpX = (sqrt(dRand) * (SHELL5_DIAM/2.-GNP_DIAM/2) * cos(dTheta));
+                dGnpY = (sqrt(dRand) * (SHELL5_DIAM/2.-GNP_DIAM/2) * sin(dTheta));
+                dGnpZ = (VESSEL_HIGHT * G4UniformRand()) - VESSEL_HIGHT/2.0;
+                // Check if this GNP is in the inner shell
+                if (dGnpR <= SHELL5_DIAM)
+                    goto retry20_5;
+
+                // Check if this GNP is over-lapping an existing GNP
+                for (int nExistingGnpIdx = 0; nExistingGnpIdx < nGnpIdx; nExistingGnpIdx++)
+                {
+                    double dExistingX = aryGnpInfo[nExistingGnpIdx].dPosX;
+                    double dExistingY = aryGnpInfo[nExistingGnpIdx].dPosY;
+                    double dExistingZ = aryGnpInfo[nExistingGnpIdx].dPosZ;
+
+                    double dx = dExistingX - dGnpX;
+                    double dy = dExistingY - dGnpY;
+                    double dz = dExistingZ - dGnpZ;
+
+                    // Don't bother computing sqrt if the distance is large on any axis.
+                    //if ((fabs(dx) <= GNP_DIAM) && (fabs(dy) <= GNP_DIAM) && (fabs(dz) <= GNP_DIAM))
+                    if (fabs(dx) > GNP_DIAM) continue;
+                    if (fabs(dy) > GNP_DIAM) continue;
+                    if (fabs(dz) > GNP_DIAM) continue;
+
+                    double dDist = sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dDist <= GNP_DIAM)
+                        goto retry20_5;
+                }
+            }
+            else { G4cout << "Shell index error!!" << G4endl;}
+
+            printf("%d (%le, %le, %le)\n", nGnpIdx, dGnpX, dGnpY, dGnpZ);
+
+            int nCopyNumber = nGnpIdx;
+            new G4PVPlacement(0, G4ThreeVector(dGnpX, dGnpY, dGnpZ), pGnpLog, "GnpPhys", pWorldLogic, false, nCopyNumber);
+            pGnpLog->SetVisAttributes(pVisAttributesGold);
+
+            aryGnpInfo[nGnpIdx].dPosX = dGnpX;
+            aryGnpInfo[nGnpIdx].dPosY = dGnpY;
+            aryGnpInfo[nGnpIdx].dPosZ = dGnpZ;
+        }
+    }
+    if (GNP_DIAM == 100 * nm)
+    {
+        for (int nGnpIdx = 0; nGnpIdx < m_nGnpCount; nGnpIdx++)
+        {
+            double dTheta, dRand, dGnpX, dGnpY, dGnpZ; //Declear to use at the end "fprintf()"
+            double dGnpR; // Radial Direction
+
+            G4int GNP_COUNT_0_10 = GNP_COUNT*SHELL_FRC100NM_4HPI_0_10;
+            G4int GNP_COUNT_10_20 = GNP_COUNT*SHELL_FRC100NM_4HPI_10_20;
+            G4int GNP_COUNT_20_30 = GNP_COUNT*SHELL_FRC100NM_4HPI_20_30;
+            G4int GNP_COUNT_30_40 = GNP_COUNT*SHELL_FRC100NM_4HPI_30_40;
+            G4int GNP_COUNT_40_50 = GNP_COUNT*SHELL_FRC100NM_4HPI_40_50;
+
+            if (0 <= nGnpIdx && nGnpIdx < GNP_COUNT_0_10) // Shell1
+            {
+                retry100_1:
+                // Compute a random position for the GNP
+                dTheta = G4UniformRand() * 2*M_PI;
+                dRand = G4UniformRand();
+                dGnpX = (sqrt(dRand) * (SHELL1_DIAM/2.-GNP_DIAM/2) * cos(dTheta));
+                dGnpY = (sqrt(dRand) * (SHELL1_DIAM/2.-GNP_DIAM/2) * sin(dTheta));
+                dGnpZ = (VESSEL_HIGHT * G4UniformRand()) - VESSEL_HIGHT/2.0;
+
+                // Check if this GNP is over-lapping an existing GNP
+                for (int nExistingGnpIdx = 0; nExistingGnpIdx < nGnpIdx; nExistingGnpIdx++)
+                {
+                    double dExistingX = aryGnpInfo[nExistingGnpIdx].dPosX;
+                    double dExistingY = aryGnpInfo[nExistingGnpIdx].dPosY;
+                    double dExistingZ = aryGnpInfo[nExistingGnpIdx].dPosZ;
+
+                    double dx = dExistingX - dGnpX;
+                    double dy = dExistingY - dGnpY;
+                    double dz = dExistingZ - dGnpZ;
+
+                    // Don't bother computing sqrt if the distance is large on any axis.
+                    //if ((fabs(dx) <= GNP_DIAM) && (fabs(dy) <= GNP_DIAM) && (fabs(dz) <= GNP_DIAM))
+                    if (fabs(dx) > GNP_DIAM) continue;
+                    if (fabs(dy) > GNP_DIAM) continue;
+                    if (fabs(dz) > GNP_DIAM) continue;
+
+                    double dDist = sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dDist <= GNP_DIAM)
+                        goto retry100_1;
+                }
+            }
+            else if (GNP_COUNT_0_10 <= nGnpIdx && nGnpIdx < (GNP_COUNT_0_10 + GNP_COUNT_10_20)) // Shell2
+            {
+                retry100_2:
+                // Compute a random position for the GNP
+                dTheta = G4UniformRand() * 2*M_PI;
+                dRand = G4UniformRand();
+                dGnpX = (sqrt(dRand) * (SHELL2_DIAM/2.-GNP_DIAM/2) * cos(dTheta));
+                dGnpY = (sqrt(dRand) * (SHELL2_DIAM/2.-GNP_DIAM/2) * sin(dTheta));
+                dGnpZ = (VESSEL_HIGHT * G4UniformRand()) - VESSEL_HIGHT/2.0;
+                dGnpR = sqrt(dGnpX*dGnpX + dGnpY*dGnpY)/um;
+                // Check if this GNP is in the inner shell
+                if (dGnpR <= SHELL1_DIAM/2.)
+                    goto retry100_2;
+
+                // Check if this GNP is over-lapping an existing GNP
+                for (int nExistingGnpIdx = 0; nExistingGnpIdx < nGnpIdx; nExistingGnpIdx++)
+                {
+                    double dExistingX = aryGnpInfo[nExistingGnpIdx].dPosX;
+                    double dExistingY = aryGnpInfo[nExistingGnpIdx].dPosY;
+                    double dExistingZ = aryGnpInfo[nExistingGnpIdx].dPosZ;
+
+                    double dx = dExistingX - dGnpX;
+                    double dy = dExistingY - dGnpY;
+                    double dz = dExistingZ - dGnpZ;
+
+                    double dDist = sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dDist <= GNP_DIAM)
+                        goto retry100_2;
+                }
+            }
+            else if ((GNP_COUNT_0_10 + GNP_COUNT_10_20) <= nGnpIdx &&
+                     nGnpIdx < (GNP_COUNT_0_10+GNP_COUNT_10_20+GNP_COUNT_20_30)) // Shell3
+            {
+                retry100_3:
+                // Compute a random position for the GNP
+                dTheta = G4UniformRand() * 2*M_PI;
+                dRand = G4UniformRand();
+                dGnpX = (sqrt(dRand) * (SHELL3_DIAM/2.-GNP_DIAM/2) * cos(dTheta));
+                dGnpY = (sqrt(dRand) * (SHELL3_DIAM/2.-GNP_DIAM/2) * sin(dTheta));
+                dGnpZ = (VESSEL_HIGHT * G4UniformRand()) - VESSEL_HIGHT/2.0;
+                // Check if this GNP is in the inner shell
+                if (dGnpR <= SHELL3_DIAM)
+                    goto retry100_3;
+
+                // Check if this GNP is over-lapping an existing GNP
+                for (int nExistingGnpIdx = 0; nExistingGnpIdx < nGnpIdx; nExistingGnpIdx++)
+                {
+                    double dExistingX = aryGnpInfo[nExistingGnpIdx].dPosX;
+                    double dExistingY = aryGnpInfo[nExistingGnpIdx].dPosY;
+                    double dExistingZ = aryGnpInfo[nExistingGnpIdx].dPosZ;
+
+                    double dx = dExistingX - dGnpX;
+                    double dy = dExistingY - dGnpY;
+                    double dz = dExistingZ - dGnpZ;
+
+                    // Don't bother computing sqrt if the distance is large on any axis.
+                    //if ((fabs(dx) <= GNP_DIAM) && (fabs(dy) <= GNP_DIAM) && (fabs(dz) <= GNP_DIAM))
+                    if (fabs(dx) > GNP_DIAM) continue;
+                    if (fabs(dy) > GNP_DIAM) continue;
+                    if (fabs(dz) > GNP_DIAM) continue;
+
+                    double dDist = sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dDist <= GNP_DIAM)
+                        goto retry100_3;
+                }
+            }
+            else if ((GNP_COUNT_0_10+GNP_COUNT_10_20+GNP_COUNT_20_30) <= nGnpIdx &&
+                     nGnpIdx < (GNP_COUNT_0_10+GNP_COUNT_10_20+GNP_COUNT_20_30+GNP_COUNT_30_40)) // Shell4
+            {
+                retry100_4:
+                // Compute a random position for the GNP
+                dTheta = G4UniformRand() * 2*M_PI;
+                dRand = G4UniformRand();
+                dGnpX = (sqrt(dRand) * (SHELL4_DIAM/2.-GNP_DIAM/2) * cos(dTheta));
+                dGnpY = (sqrt(dRand) * (SHELL4_DIAM/2.-GNP_DIAM/2) * sin(dTheta));
+                dGnpZ = (VESSEL_HIGHT * G4UniformRand()) - VESSEL_HIGHT/2.0;
+                // Check if this GNP is in the inner shell
+                if (dGnpR <= SHELL4_DIAM)
+                    goto retry100_4;
+
+                // Check if this GNP is over-lapping an existing GNP
+                for (int nExistingGnpIdx = 0; nExistingGnpIdx < nGnpIdx; nExistingGnpIdx++)
+                {
+                    double dExistingX = aryGnpInfo[nExistingGnpIdx].dPosX;
+                    double dExistingY = aryGnpInfo[nExistingGnpIdx].dPosY;
+                    double dExistingZ = aryGnpInfo[nExistingGnpIdx].dPosZ;
+
+                    double dx = dExistingX - dGnpX;
+                    double dy = dExistingY - dGnpY;
+                    double dz = dExistingZ - dGnpZ;
+
+                    // Don't bother computing sqrt if the distance is large on any axis.
+                    //if ((fabs(dx) <= GNP_DIAM) && (fabs(dy) <= GNP_DIAM) && (fabs(dz) <= GNP_DIAM))
+                    if (fabs(dx) > GNP_DIAM) continue;
+                    if (fabs(dy) > GNP_DIAM) continue;
+                    if (fabs(dz) > GNP_DIAM) continue;
+
+                    double dDist = sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dDist <= GNP_DIAM)
+                        goto retry100_4;
+                }
+            }
+            else if ((GNP_COUNT_0_10+GNP_COUNT_10_20+GNP_COUNT_20_30+GNP_COUNT_30_40) <= nGnpIdx &&
+                     nGnpIdx < (GNP_COUNT_0_10+GNP_COUNT_10_20+GNP_COUNT_20_30+GNP_COUNT_30_40+GNP_COUNT_40_50)) // Shell5
+            {
+                retry100_5:
+                // Compute a random position for the GNP
+                dTheta = G4UniformRand() * 2*M_PI;
+                dRand = G4UniformRand();
+                dGnpX = (sqrt(dRand) * (SHELL5_DIAM/2.-GNP_DIAM/2) * cos(dTheta));
+                dGnpY = (sqrt(dRand) * (SHELL5_DIAM/2.-GNP_DIAM/2) * sin(dTheta));
+                dGnpZ = (VESSEL_HIGHT * G4UniformRand()) - VESSEL_HIGHT/2.0;
+                // Check if this GNP is in the inner shell
+                if (dGnpR <= SHELL5_DIAM)
+                    goto retry100_5;
+
+                // Check if this GNP is over-lapping an existing GNP
+                for (int nExistingGnpIdx = 0; nExistingGnpIdx < nGnpIdx; nExistingGnpIdx++)
+                {
+                    double dExistingX = aryGnpInfo[nExistingGnpIdx].dPosX;
+                    double dExistingY = aryGnpInfo[nExistingGnpIdx].dPosY;
+                    double dExistingZ = aryGnpInfo[nExistingGnpIdx].dPosZ;
+
+                    double dx = dExistingX - dGnpX;
+                    double dy = dExistingY - dGnpY;
+                    double dz = dExistingZ - dGnpZ;
+
+                    // Don't bother computing sqrt if the distance is large on any axis.
+                    //if ((fabs(dx) <= GNP_DIAM) && (fabs(dy) <= GNP_DIAM) && (fabs(dz) <= GNP_DIAM))
+                    if (fabs(dx) > GNP_DIAM) continue;
+                    if (fabs(dy) > GNP_DIAM) continue;
+                    if (fabs(dz) > GNP_DIAM) continue;
+
+                    double dDist = sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dDist <= GNP_DIAM)
+                        goto retry100_5;
+                }
+            }
+            else { G4cout << "Shell index error!!" << G4endl;}
+
+            printf("%d (%le, %le, %le)\n", nGnpIdx, dGnpX, dGnpY, dGnpZ);
+
+            int nCopyNumber = nGnpIdx;
+            new G4PVPlacement(0, G4ThreeVector(dGnpX, dGnpY, dGnpZ), pGnpLog, "GnpPhys", pWorldLogic, false, nCopyNumber);
+            pGnpLog->SetVisAttributes(pVisAttributesGold);
+
+            aryGnpInfo[nGnpIdx].dPosX = dGnpX;
+            aryGnpInfo[nGnpIdx].dPosY = dGnpY;
+            aryGnpInfo[nGnpIdx].dPosZ = dGnpZ;
+        }
+    }
+//    FILE* fp =fopen("position.txt", "wt");
+//    for (int i=0; i<60; i++)
+//    {
+//        printf("%d %d\n", i, ary[i]);
+//        fprintf(fp, "%d %d\n", i, ary[i]);
+//    }
+//    fclose(fp);
+    delete [] aryGnpInfo;
+}
+
+///////////////////////////8HPI////////////////////////////////////////
+// Distribute GNP with migration after 8 hour post injection (8HPI)
+void BGMSCDetectorConstruction::DistributeGnps8HPI(G4LogicalVolume *pWorldLogic)
+{
+    G4Material *pMaterialWater = G4NistManager::Instance()->FindOrBuildMaterial("G4_WATER");
+    G4Material *pMaterialGold = G4NistManager::Instance()->FindOrBuildMaterial("G4_Au");
+    assert(pMaterialWater != NULL);
+    assert(pMaterialGold != NULL);
+
+    struct SGnpInfo
+    {
+        double dPosX;
+        double dPosY;
+        double dPosZ;
+    };
+
+    SGnpInfo *aryGnpInfo = new SGnpInfo [m_nGnpCount];
+
+    // Set visible attributes
+    G4VisAttributes* pVisAttributesGold = new G4VisAttributes;
+    pVisAttributesGold->SetForceWireframe(true);
+    pVisAttributesGold->SetForceAuxEdgeVisible(true);
+    pVisAttributesGold->SetForceSolid(false);
+    pVisAttributesGold->SetVisibility(true);
+    pVisAttributesGold->SetColor(255. / 255., 215. / 255., 0.); // gold
+
+    // Create the Sphere object
+    G4Sphere* pGnpSphere = new G4Sphere("GNP", 0., GNP_DIAM / 2, 0*deg, 360*deg, 0*deg, 180*deg);
+    G4LogicalVolume *pGnpLog = new G4LogicalVolume(pGnpSphere, pMaterialGold, "GNPLogic");
+
+    printf("Distributing GNPs randomly...\n");
+    G4int ary[360]={0};
+
+    if (GNP_DIAM == 20 * nm)
+    {
+        for (int nGnpIdx = 0; nGnpIdx < m_nGnpCount; nGnpIdx++)
+        {
+            double dTheta, dRand, dGnpX, dGnpY, dGnpZ; //Declear to use at the end "fprintf()"
+            double dGnpR; // Radial Direction
+
+            G4int GNP_COUNT_0_10 = GNP_COUNT*SHELL_FRC20NM_8HPI_0_10;
+            G4int GNP_COUNT_10_20 = GNP_COUNT*SHELL_FRC20NM_8HPI_10_20;
+            G4int GNP_COUNT_20_30 = GNP_COUNT*SHELL_FRC20NM_8HPI_20_30;
+            G4int GNP_COUNT_30_40 = GNP_COUNT*SHELL_FRC20NM_8HPI_30_40;
+            G4int GNP_COUNT_40_50 = GNP_COUNT*SHELL_FRC20NM_8HPI_40_50;
+
+            if (0 <= nGnpIdx && nGnpIdx < GNP_COUNT_0_10) // Shell1
+            {
+                retry20_1:
+                // Compute a random position for the GNP
+                dTheta = G4UniformRand() * 2*M_PI;
+                dRand = G4UniformRand();
+                dGnpX = (sqrt(dRand) * (SHELL1_DIAM/2.-GNP_DIAM/2) * cos(dTheta));
+                dGnpY = (sqrt(dRand) * (SHELL1_DIAM/2.-GNP_DIAM/2) * sin(dTheta));
+                dGnpZ = (VESSEL_HIGHT * G4UniformRand()) - VESSEL_HIGHT/2.0;
+
+                // Check if this GNP is over-lapping an existing GNP
+                for (int nExistingGnpIdx = 0; nExistingGnpIdx < nGnpIdx; nExistingGnpIdx++)
+                {
+                    double dExistingX = aryGnpInfo[nExistingGnpIdx].dPosX;
+                    double dExistingY = aryGnpInfo[nExistingGnpIdx].dPosY;
+                    double dExistingZ = aryGnpInfo[nExistingGnpIdx].dPosZ;
+
+                    double dx = dExistingX - dGnpX;
+                    double dy = dExistingY - dGnpY;
+                    double dz = dExistingZ - dGnpZ;
+
+                    // Don't bother computing sqrt if the distance is large on any axis.
+                    //if ((fabs(dx) <= GNP_DIAM) && (fabs(dy) <= GNP_DIAM) && (fabs(dz) <= GNP_DIAM))
+                    if (fabs(dx) > GNP_DIAM) continue;
+                    if (fabs(dy) > GNP_DIAM) continue;
+                    if (fabs(dz) > GNP_DIAM) continue;
+
+                    double dDist = sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dDist <= GNP_DIAM)
+                        goto retry20_1;
+                }
+            }
+            else if (GNP_COUNT_0_10 <= nGnpIdx && nGnpIdx < (GNP_COUNT_0_10 + GNP_COUNT_10_20)) // Shell2
+            {
+                retry20_2:
+                // Compute a random position for the GNP
+                dTheta = G4UniformRand() * 2*M_PI;
+                dRand = G4UniformRand();
+                dGnpX = (sqrt(dRand) * (SHELL2_DIAM/2.-GNP_DIAM/2) * cos(dTheta));
+                dGnpY = (sqrt(dRand) * (SHELL2_DIAM/2.-GNP_DIAM/2) * sin(dTheta));
+                dGnpZ = (VESSEL_HIGHT * G4UniformRand()) - VESSEL_HIGHT/2.0;
+                dGnpR = sqrt(dGnpX*dGnpX + dGnpY*dGnpY)/um;
+                // Check if this GNP is in the inner shell
+                if (dGnpR <= SHELL1_DIAM/2.)
+                    goto retry20_2;
+
+                // Check if this GNP is over-lapping an existing GNP
+                for (int nExistingGnpIdx = 0; nExistingGnpIdx < nGnpIdx; nExistingGnpIdx++)
+                {
+                    double dExistingX = aryGnpInfo[nExistingGnpIdx].dPosX;
+                    double dExistingY = aryGnpInfo[nExistingGnpIdx].dPosY;
+                    double dExistingZ = aryGnpInfo[nExistingGnpIdx].dPosZ;
+
+                    double dx = dExistingX - dGnpX;
+                    double dy = dExistingY - dGnpY;
+                    double dz = dExistingZ - dGnpZ;
+
+                    double dDist = sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dDist <= GNP_DIAM)
+                        goto retry20_2;
+                }
+            }
+            else if ((GNP_COUNT_0_10 + GNP_COUNT_10_20) <= nGnpIdx &&
+                     nGnpIdx < (GNP_COUNT_0_10+GNP_COUNT_10_20+GNP_COUNT_20_30)) // Shell3
+            {
+                retry20_3:
+                // Compute a random position for the GNP
+                dTheta = G4UniformRand() * 2*M_PI;
+                dRand = G4UniformRand();
+                dGnpX = (sqrt(dRand) * (SHELL3_DIAM/2.-GNP_DIAM/2) * cos(dTheta));
+                dGnpY = (sqrt(dRand) * (SHELL3_DIAM/2.-GNP_DIAM/2) * sin(dTheta));
+                dGnpZ = (VESSEL_HIGHT * G4UniformRand()) - VESSEL_HIGHT/2.0;
+                // Check if this GNP is in the inner shell
+                if (dGnpR <= SHELL3_DIAM)
+                    goto retry20_3;
+
+                // Check if this GNP is over-lapping an existing GNP
+                for (int nExistingGnpIdx = 0; nExistingGnpIdx < nGnpIdx; nExistingGnpIdx++)
+                {
+                    double dExistingX = aryGnpInfo[nExistingGnpIdx].dPosX;
+                    double dExistingY = aryGnpInfo[nExistingGnpIdx].dPosY;
+                    double dExistingZ = aryGnpInfo[nExistingGnpIdx].dPosZ;
+
+                    double dx = dExistingX - dGnpX;
+                    double dy = dExistingY - dGnpY;
+                    double dz = dExistingZ - dGnpZ;
+
+                    // Don't bother computing sqrt if the distance is large on any axis.
+                    //if ((fabs(dx) <= GNP_DIAM) && (fabs(dy) <= GNP_DIAM) && (fabs(dz) <= GNP_DIAM))
+                    if (fabs(dx) > GNP_DIAM) continue;
+                    if (fabs(dy) > GNP_DIAM) continue;
+                    if (fabs(dz) > GNP_DIAM) continue;
+
+                    double dDist = sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dDist <= GNP_DIAM)
+                        goto retry20_3;
+                }
+            }
+            else if ((GNP_COUNT_0_10+GNP_COUNT_10_20+GNP_COUNT_20_30) <= nGnpIdx &&
+                     nGnpIdx < (GNP_COUNT_0_10+GNP_COUNT_10_20+GNP_COUNT_20_30+GNP_COUNT_30_40)) // Shell4
+            {
+                retry20_4:
+                // Compute a random position for the GNP
+                dTheta = G4UniformRand() * 2*M_PI;
+                dRand = G4UniformRand();
+                dGnpX = (sqrt(dRand) * (SHELL4_DIAM/2.-GNP_DIAM/2) * cos(dTheta));
+                dGnpY = (sqrt(dRand) * (SHELL4_DIAM/2.-GNP_DIAM/2) * sin(dTheta));
+                dGnpZ = (VESSEL_HIGHT * G4UniformRand()) - VESSEL_HIGHT/2.0;
+                // Check if this GNP is in the inner shell
+                if (dGnpR <= SHELL4_DIAM)
+                    goto retry20_4;
+
+                // Check if this GNP is over-lapping an existing GNP
+                for (int nExistingGnpIdx = 0; nExistingGnpIdx < nGnpIdx; nExistingGnpIdx++)
+                {
+                    double dExistingX = aryGnpInfo[nExistingGnpIdx].dPosX;
+                    double dExistingY = aryGnpInfo[nExistingGnpIdx].dPosY;
+                    double dExistingZ = aryGnpInfo[nExistingGnpIdx].dPosZ;
+
+                    double dx = dExistingX - dGnpX;
+                    double dy = dExistingY - dGnpY;
+                    double dz = dExistingZ - dGnpZ;
+
+                    // Don't bother computing sqrt if the distance is large on any axis.
+                    //if ((fabs(dx) <= GNP_DIAM) && (fabs(dy) <= GNP_DIAM) && (fabs(dz) <= GNP_DIAM))
+                    if (fabs(dx) > GNP_DIAM) continue;
+                    if (fabs(dy) > GNP_DIAM) continue;
+                    if (fabs(dz) > GNP_DIAM) continue;
+
+                    double dDist = sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dDist <= GNP_DIAM)
+                        goto retry20_4;
+                }
+            }
+            else if ((GNP_COUNT_0_10+GNP_COUNT_10_20+GNP_COUNT_20_30+GNP_COUNT_30_40) <= nGnpIdx &&
+                     nGnpIdx < (GNP_COUNT_0_10+GNP_COUNT_10_20+GNP_COUNT_20_30+GNP_COUNT_30_40+GNP_COUNT_40_50)) // Shell5
+            {
+                retry20_5:
+                // Compute a random position for the GNP
+                dTheta = G4UniformRand() * 2*M_PI;
+                dRand = G4UniformRand();
+                dGnpX = (sqrt(dRand) * (SHELL5_DIAM/2.-GNP_DIAM/2) * cos(dTheta));
+                dGnpY = (sqrt(dRand) * (SHELL5_DIAM/2.-GNP_DIAM/2) * sin(dTheta));
+                dGnpZ = (VESSEL_HIGHT * G4UniformRand()) - VESSEL_HIGHT/2.0;
+                // Check if this GNP is in the inner shell
+                if (dGnpR <= SHELL5_DIAM)
+                    goto retry20_5;
+
+                // Check if this GNP is over-lapping an existing GNP
+                for (int nExistingGnpIdx = 0; nExistingGnpIdx < nGnpIdx; nExistingGnpIdx++)
+                {
+                    double dExistingX = aryGnpInfo[nExistingGnpIdx].dPosX;
+                    double dExistingY = aryGnpInfo[nExistingGnpIdx].dPosY;
+                    double dExistingZ = aryGnpInfo[nExistingGnpIdx].dPosZ;
+
+                    double dx = dExistingX - dGnpX;
+                    double dy = dExistingY - dGnpY;
+                    double dz = dExistingZ - dGnpZ;
+
+                    // Don't bother computing sqrt if the distance is large on any axis.
+                    //if ((fabs(dx) <= GNP_DIAM) && (fabs(dy) <= GNP_DIAM) && (fabs(dz) <= GNP_DIAM))
+                    if (fabs(dx) > GNP_DIAM) continue;
+                    if (fabs(dy) > GNP_DIAM) continue;
+                    if (fabs(dz) > GNP_DIAM) continue;
+
+                    double dDist = sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dDist <= GNP_DIAM)
+                        goto retry20_5;
+                }
+            }
+            else { G4cout << "Shell index error!!" << G4endl;}
+
+            printf("%d (%le, %le, %le)\n", nGnpIdx, dGnpX, dGnpY, dGnpZ);
+
+            int nCopyNumber = nGnpIdx;
+            new G4PVPlacement(0, G4ThreeVector(dGnpX, dGnpY, dGnpZ), pGnpLog, "GnpPhys", pWorldLogic, false, nCopyNumber);
+            pGnpLog->SetVisAttributes(pVisAttributesGold);
+
+            aryGnpInfo[nGnpIdx].dPosX = dGnpX;
+            aryGnpInfo[nGnpIdx].dPosY = dGnpY;
+            aryGnpInfo[nGnpIdx].dPosZ = dGnpZ;
+        }
+    }
+    if (GNP_DIAM == 100 * nm)
+    {
+        for (int nGnpIdx = 0; nGnpIdx < m_nGnpCount; nGnpIdx++)
+        {
+            double dTheta, dRand, dGnpX, dGnpY, dGnpZ; //Declear to use at the end "fprintf()"
+            double dGnpR; // Radial Direction
+
+            G4int GNP_COUNT_0_10 = GNP_COUNT*SHELL_FRC100NM_8HPI_0_10;
+            G4int GNP_COUNT_10_20 = GNP_COUNT*SHELL_FRC100NM_8HPI_10_20;
+            G4int GNP_COUNT_20_30 = GNP_COUNT*SHELL_FRC100NM_8HPI_20_30;
+            G4int GNP_COUNT_30_40 = GNP_COUNT*SHELL_FRC100NM_8HPI_30_40;
+            G4int GNP_COUNT_40_50 = GNP_COUNT*SHELL_FRC100NM_8HPI_40_50;
+
+            if (0 <= nGnpIdx && nGnpIdx < GNP_COUNT_0_10) // Shell1
+            {
+                retry100_1:
+                // Compute a random position for the GNP
+                dTheta = G4UniformRand() * 2*M_PI;
+                dRand = G4UniformRand();
+                dGnpX = (sqrt(dRand) * (SHELL1_DIAM/2.-GNP_DIAM/2) * cos(dTheta));
+                dGnpY = (sqrt(dRand) * (SHELL1_DIAM/2.-GNP_DIAM/2) * sin(dTheta));
+                dGnpZ = (VESSEL_HIGHT * G4UniformRand()) - VESSEL_HIGHT/2.0;
+
+                // Check if this GNP is over-lapping an existing GNP
+                for (int nExistingGnpIdx = 0; nExistingGnpIdx < nGnpIdx; nExistingGnpIdx++)
+                {
+                    double dExistingX = aryGnpInfo[nExistingGnpIdx].dPosX;
+                    double dExistingY = aryGnpInfo[nExistingGnpIdx].dPosY;
+                    double dExistingZ = aryGnpInfo[nExistingGnpIdx].dPosZ;
+
+                    double dx = dExistingX - dGnpX;
+                    double dy = dExistingY - dGnpY;
+                    double dz = dExistingZ - dGnpZ;
+
+                    // Don't bother computing sqrt if the distance is large on any axis.
+                    //if ((fabs(dx) <= GNP_DIAM) && (fabs(dy) <= GNP_DIAM) && (fabs(dz) <= GNP_DIAM))
+                    if (fabs(dx) > GNP_DIAM) continue;
+                    if (fabs(dy) > GNP_DIAM) continue;
+                    if (fabs(dz) > GNP_DIAM) continue;
+
+                    double dDist = sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dDist <= GNP_DIAM)
+                        goto retry100_1;
+                }
+            }
+            else if (GNP_COUNT_0_10 <= nGnpIdx && nGnpIdx < (GNP_COUNT_0_10 + GNP_COUNT_10_20)) // Shell2
+            {
+                retry100_2:
+                // Compute a random position for the GNP
+                dTheta = G4UniformRand() * 2*M_PI;
+                dRand = G4UniformRand();
+                dGnpX = (sqrt(dRand) * (SHELL2_DIAM/2.-GNP_DIAM/2) * cos(dTheta));
+                dGnpY = (sqrt(dRand) * (SHELL2_DIAM/2.-GNP_DIAM/2) * sin(dTheta));
+                dGnpZ = (VESSEL_HIGHT * G4UniformRand()) - VESSEL_HIGHT/2.0;
+                dGnpR = sqrt(dGnpX*dGnpX + dGnpY*dGnpY)/um;
+                // Check if this GNP is in the inner shell
+                if (dGnpR <= SHELL1_DIAM/2.)
+                    goto retry100_2;
+
+                // Check if this GNP is over-lapping an existing GNP
+                for (int nExistingGnpIdx = 0; nExistingGnpIdx < nGnpIdx; nExistingGnpIdx++)
+                {
+                    double dExistingX = aryGnpInfo[nExistingGnpIdx].dPosX;
+                    double dExistingY = aryGnpInfo[nExistingGnpIdx].dPosY;
+                    double dExistingZ = aryGnpInfo[nExistingGnpIdx].dPosZ;
+
+                    double dx = dExistingX - dGnpX;
+                    double dy = dExistingY - dGnpY;
+                    double dz = dExistingZ - dGnpZ;
+
+                    double dDist = sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dDist <= GNP_DIAM)
+                        goto retry100_2;
+                }
+            }
+            else if ((GNP_COUNT_0_10 + GNP_COUNT_10_20) <= nGnpIdx &&
+                     nGnpIdx < (GNP_COUNT_0_10+GNP_COUNT_10_20+GNP_COUNT_20_30)) // Shell3
+            {
+                retry100_3:
+                // Compute a random position for the GNP
+                dTheta = G4UniformRand() * 2*M_PI;
+                dRand = G4UniformRand();
+                dGnpX = (sqrt(dRand) * (SHELL3_DIAM/2.-GNP_DIAM/2) * cos(dTheta));
+                dGnpY = (sqrt(dRand) * (SHELL3_DIAM/2.-GNP_DIAM/2) * sin(dTheta));
+                dGnpZ = (VESSEL_HIGHT * G4UniformRand()) - VESSEL_HIGHT/2.0;
+                // Check if this GNP is in the inner shell
+                if (dGnpR <= SHELL3_DIAM)
+                    goto retry100_3;
+
+                // Check if this GNP is over-lapping an existing GNP
+                for (int nExistingGnpIdx = 0; nExistingGnpIdx < nGnpIdx; nExistingGnpIdx++)
+                {
+                    double dExistingX = aryGnpInfo[nExistingGnpIdx].dPosX;
+                    double dExistingY = aryGnpInfo[nExistingGnpIdx].dPosY;
+                    double dExistingZ = aryGnpInfo[nExistingGnpIdx].dPosZ;
+
+                    double dx = dExistingX - dGnpX;
+                    double dy = dExistingY - dGnpY;
+                    double dz = dExistingZ - dGnpZ;
+
+                    // Don't bother computing sqrt if the distance is large on any axis.
+                    //if ((fabs(dx) <= GNP_DIAM) && (fabs(dy) <= GNP_DIAM) && (fabs(dz) <= GNP_DIAM))
+                    if (fabs(dx) > GNP_DIAM) continue;
+                    if (fabs(dy) > GNP_DIAM) continue;
+                    if (fabs(dz) > GNP_DIAM) continue;
+
+                    double dDist = sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dDist <= GNP_DIAM)
+                        goto retry100_3;
+                }
+            }
+            else if ((GNP_COUNT_0_10+GNP_COUNT_10_20+GNP_COUNT_20_30) <= nGnpIdx &&
+                     nGnpIdx < (GNP_COUNT_0_10+GNP_COUNT_10_20+GNP_COUNT_20_30+GNP_COUNT_30_40)) // Shell4
+            {
+                retry100_4:
+                // Compute a random position for the GNP
+                dTheta = G4UniformRand() * 2*M_PI;
+                dRand = G4UniformRand();
+                dGnpX = (sqrt(dRand) * (SHELL4_DIAM/2.-GNP_DIAM/2) * cos(dTheta));
+                dGnpY = (sqrt(dRand) * (SHELL4_DIAM/2.-GNP_DIAM/2) * sin(dTheta));
+                dGnpZ = (VESSEL_HIGHT * G4UniformRand()) - VESSEL_HIGHT/2.0;
+                // Check if this GNP is in the inner shell
+                if (dGnpR <= SHELL4_DIAM)
+                    goto retry100_4;
+
+                // Check if this GNP is over-lapping an existing GNP
+                for (int nExistingGnpIdx = 0; nExistingGnpIdx < nGnpIdx; nExistingGnpIdx++)
+                {
+                    double dExistingX = aryGnpInfo[nExistingGnpIdx].dPosX;
+                    double dExistingY = aryGnpInfo[nExistingGnpIdx].dPosY;
+                    double dExistingZ = aryGnpInfo[nExistingGnpIdx].dPosZ;
+
+                    double dx = dExistingX - dGnpX;
+                    double dy = dExistingY - dGnpY;
+                    double dz = dExistingZ - dGnpZ;
+
+                    // Don't bother computing sqrt if the distance is large on any axis.
+                    //if ((fabs(dx) <= GNP_DIAM) && (fabs(dy) <= GNP_DIAM) && (fabs(dz) <= GNP_DIAM))
+                    if (fabs(dx) > GNP_DIAM) continue;
+                    if (fabs(dy) > GNP_DIAM) continue;
+                    if (fabs(dz) > GNP_DIAM) continue;
+
+                    double dDist = sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dDist <= GNP_DIAM)
+                        goto retry100_4;
+                }
+            }
+            else if ((GNP_COUNT_0_10+GNP_COUNT_10_20+GNP_COUNT_20_30+GNP_COUNT_30_40) <= nGnpIdx &&
+                     nGnpIdx < (GNP_COUNT_0_10+GNP_COUNT_10_20+GNP_COUNT_20_30+GNP_COUNT_30_40+GNP_COUNT_40_50)) // Shell5
+            {
+                retry100_5:
+                // Compute a random position for the GNP
+                dTheta = G4UniformRand() * 2*M_PI;
+                dRand = G4UniformRand();
+                dGnpX = (sqrt(dRand) * (SHELL5_DIAM/2.-GNP_DIAM/2) * cos(dTheta));
+                dGnpY = (sqrt(dRand) * (SHELL5_DIAM/2.-GNP_DIAM/2) * sin(dTheta));
+                dGnpZ = (VESSEL_HIGHT * G4UniformRand()) - VESSEL_HIGHT/2.0;
+                // Check if this GNP is in the inner shell
+                if (dGnpR <= SHELL5_DIAM)
+                    goto retry100_5;
+
+                // Check if this GNP is over-lapping an existing GNP
+                for (int nExistingGnpIdx = 0; nExistingGnpIdx < nGnpIdx; nExistingGnpIdx++)
+                {
+                    double dExistingX = aryGnpInfo[nExistingGnpIdx].dPosX;
+                    double dExistingY = aryGnpInfo[nExistingGnpIdx].dPosY;
+                    double dExistingZ = aryGnpInfo[nExistingGnpIdx].dPosZ;
+
+                    double dx = dExistingX - dGnpX;
+                    double dy = dExistingY - dGnpY;
+                    double dz = dExistingZ - dGnpZ;
+
+                    // Don't bother computing sqrt if the distance is large on any axis.
+                    //if ((fabs(dx) <= GNP_DIAM) && (fabs(dy) <= GNP_DIAM) && (fabs(dz) <= GNP_DIAM))
+                    if (fabs(dx) > GNP_DIAM) continue;
+                    if (fabs(dy) > GNP_DIAM) continue;
+                    if (fabs(dz) > GNP_DIAM) continue;
+
+                    double dDist = sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dDist <= GNP_DIAM)
+                        goto retry100_5;
+                }
+            }
+            else { G4cout << "Shell index error!!" << G4endl;}
+
+            printf("%d (%le, %le, %le)\n", nGnpIdx, dGnpX, dGnpY, dGnpZ);
+
+            int nCopyNumber = nGnpIdx;
+            new G4PVPlacement(0, G4ThreeVector(dGnpX, dGnpY, dGnpZ), pGnpLog, "GnpPhys", pWorldLogic, false, nCopyNumber);
+            pGnpLog->SetVisAttributes(pVisAttributesGold);
+
+            aryGnpInfo[nGnpIdx].dPosX = dGnpX;
+            aryGnpInfo[nGnpIdx].dPosY = dGnpY;
+            aryGnpInfo[nGnpIdx].dPosZ = dGnpZ;
+        }
+    }
+//    FILE* fp =fopen("position.txt", "wt");
+//    for (int i=0; i<60; i++)
+//    {
+//        printf("%d %d\n", i, ary[i]);
+//        fprintf(fp, "%d %d\n", i, ary[i]);
+//    }
+//    fclose(fp);
+    delete [] aryGnpInfo;
+}
+
+
+///////////////////////////16HPI////////////////////////////////////////
+// Distribute GNP with migration after 8 hour post injection (16HPI)
+void BGMSCDetectorConstruction::DistributeGnps16HPI(G4LogicalVolume *pWorldLogic)
+{
+    G4Material *pMaterialWater = G4NistManager::Instance()->FindOrBuildMaterial("G4_WATER");
+    G4Material *pMaterialGold = G4NistManager::Instance()->FindOrBuildMaterial("G4_Au");
+    assert(pMaterialWater != NULL);
+    assert(pMaterialGold != NULL);
+
+    struct SGnpInfo
+    {
+        double dPosX;
+        double dPosY;
+        double dPosZ;
+    };
+
+    SGnpInfo *aryGnpInfo = new SGnpInfo [m_nGnpCount];
+
+    // Set visible attributes
+    G4VisAttributes* pVisAttributesGold = new G4VisAttributes;
+    pVisAttributesGold->SetForceWireframe(true);
+    pVisAttributesGold->SetForceAuxEdgeVisible(true);
+    pVisAttributesGold->SetForceSolid(false);
+    pVisAttributesGold->SetVisibility(true);
+    pVisAttributesGold->SetColor(255. / 255., 215. / 255., 0.); // gold
+
+    // Create the Sphere object
+    G4Sphere* pGnpSphere = new G4Sphere("GNP", 0., GNP_DIAM / 2, 0*deg, 360*deg, 0*deg, 180*deg);
+    G4LogicalVolume *pGnpLog = new G4LogicalVolume(pGnpSphere, pMaterialGold, "GNPLogic");
+
+    printf("Distributing GNPs randomly...\n");
+    G4int ary[360]={0};
+
+    if (GNP_DIAM == 20 * nm)
+    {
+        for (int nGnpIdx = 0; nGnpIdx < m_nGnpCount; nGnpIdx++)
+        {
+            double dTheta, dRand, dGnpX, dGnpY, dGnpZ; //Declear to use at the end "fprintf()"
+            double dGnpR; // Radial Direction
+
+            G4int GNP_COUNT_0_10 = GNP_COUNT*SHELL_FRC20NM_16HPI_0_10;
+            G4int GNP_COUNT_10_20 = GNP_COUNT*SHELL_FRC20NM_16HPI_10_20;
+            G4int GNP_COUNT_20_30 = GNP_COUNT*SHELL_FRC20NM_16HPI_20_30;
+            G4int GNP_COUNT_30_40 = GNP_COUNT*SHELL_FRC20NM_16HPI_30_40;
+            G4int GNP_COUNT_40_50 = GNP_COUNT*SHELL_FRC20NM_16HPI_40_50;
+
+            if (0 <= nGnpIdx && nGnpIdx < GNP_COUNT_0_10) // Shell1
+            {
+                retry20_1:
+                // Compute a random position for the GNP
+                dTheta = G4UniformRand() * 2*M_PI;
+                dRand = G4UniformRand();
+                dGnpX = (sqrt(dRand) * (SHELL1_DIAM/2.-GNP_DIAM/2) * cos(dTheta));
+                dGnpY = (sqrt(dRand) * (SHELL1_DIAM/2.-GNP_DIAM/2) * sin(dTheta));
+                dGnpZ = (VESSEL_HIGHT * G4UniformRand()) - VESSEL_HIGHT/2.0;
+
+                // Check if this GNP is over-lapping an existing GNP
+                for (int nExistingGnpIdx = 0; nExistingGnpIdx < nGnpIdx; nExistingGnpIdx++)
+                {
+                    double dExistingX = aryGnpInfo[nExistingGnpIdx].dPosX;
+                    double dExistingY = aryGnpInfo[nExistingGnpIdx].dPosY;
+                    double dExistingZ = aryGnpInfo[nExistingGnpIdx].dPosZ;
+
+                    double dx = dExistingX - dGnpX;
+                    double dy = dExistingY - dGnpY;
+                    double dz = dExistingZ - dGnpZ;
+
+                    // Don't bother computing sqrt if the distance is large on any axis.
+                    //if ((fabs(dx) <= GNP_DIAM) && (fabs(dy) <= GNP_DIAM) && (fabs(dz) <= GNP_DIAM))
+                    if (fabs(dx) > GNP_DIAM) continue;
+                    if (fabs(dy) > GNP_DIAM) continue;
+                    if (fabs(dz) > GNP_DIAM) continue;
+
+                    double dDist = sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dDist <= GNP_DIAM)
+                        goto retry20_1;
+                }
+            }
+            else if (GNP_COUNT_0_10 <= nGnpIdx && nGnpIdx < (GNP_COUNT_0_10 + GNP_COUNT_10_20)) // Shell2
+            {
+                retry20_2:
+                // Compute a random position for the GNP
+                dTheta = G4UniformRand() * 2*M_PI;
+                dRand = G4UniformRand();
+                dGnpX = (sqrt(dRand) * (SHELL2_DIAM/2.-GNP_DIAM/2) * cos(dTheta));
+                dGnpY = (sqrt(dRand) * (SHELL2_DIAM/2.-GNP_DIAM/2) * sin(dTheta));
+                dGnpZ = (VESSEL_HIGHT * G4UniformRand()) - VESSEL_HIGHT/2.0;
+                dGnpR = sqrt(dGnpX*dGnpX + dGnpY*dGnpY)/um;
+                // Check if this GNP is in the inner shell
+                if (dGnpR <= SHELL1_DIAM/2.)
+                    goto retry20_2;
+
+                // Check if this GNP is over-lapping an existing GNP
+                for (int nExistingGnpIdx = 0; nExistingGnpIdx < nGnpIdx; nExistingGnpIdx++)
+                {
+                    double dExistingX = aryGnpInfo[nExistingGnpIdx].dPosX;
+                    double dExistingY = aryGnpInfo[nExistingGnpIdx].dPosY;
+                    double dExistingZ = aryGnpInfo[nExistingGnpIdx].dPosZ;
+
+                    double dx = dExistingX - dGnpX;
+                    double dy = dExistingY - dGnpY;
+                    double dz = dExistingZ - dGnpZ;
+
+                    double dDist = sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dDist <= GNP_DIAM)
+                        goto retry20_2;
+                }
+            }
+            else if ((GNP_COUNT_0_10 + GNP_COUNT_10_20) <= nGnpIdx &&
+                     nGnpIdx < (GNP_COUNT_0_10+GNP_COUNT_10_20+GNP_COUNT_20_30)) // Shell3
+            {
+                retry20_3:
+                // Compute a random position for the GNP
+                dTheta = G4UniformRand() * 2*M_PI;
+                dRand = G4UniformRand();
+                dGnpX = (sqrt(dRand) * (SHELL3_DIAM/2.-GNP_DIAM/2) * cos(dTheta));
+                dGnpY = (sqrt(dRand) * (SHELL3_DIAM/2.-GNP_DIAM/2) * sin(dTheta));
+                dGnpZ = (VESSEL_HIGHT * G4UniformRand()) - VESSEL_HIGHT/2.0;
+                // Check if this GNP is in the inner shell
+                if (dGnpR <= SHELL3_DIAM)
+                    goto retry20_3;
+
+                // Check if this GNP is over-lapping an existing GNP
+                for (int nExistingGnpIdx = 0; nExistingGnpIdx < nGnpIdx; nExistingGnpIdx++)
+                {
+                    double dExistingX = aryGnpInfo[nExistingGnpIdx].dPosX;
+                    double dExistingY = aryGnpInfo[nExistingGnpIdx].dPosY;
+                    double dExistingZ = aryGnpInfo[nExistingGnpIdx].dPosZ;
+
+                    double dx = dExistingX - dGnpX;
+                    double dy = dExistingY - dGnpY;
+                    double dz = dExistingZ - dGnpZ;
+
+                    // Don't bother computing sqrt if the distance is large on any axis.
+                    //if ((fabs(dx) <= GNP_DIAM) && (fabs(dy) <= GNP_DIAM) && (fabs(dz) <= GNP_DIAM))
+                    if (fabs(dx) > GNP_DIAM) continue;
+                    if (fabs(dy) > GNP_DIAM) continue;
+                    if (fabs(dz) > GNP_DIAM) continue;
+
+                    double dDist = sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dDist <= GNP_DIAM)
+                        goto retry20_3;
+                }
+            }
+            else if ((GNP_COUNT_0_10+GNP_COUNT_10_20+GNP_COUNT_20_30) <= nGnpIdx &&
+                     nGnpIdx < (GNP_COUNT_0_10+GNP_COUNT_10_20+GNP_COUNT_20_30+GNP_COUNT_30_40)) // Shell4
+            {
+                retry20_4:
+                // Compute a random position for the GNP
+                dTheta = G4UniformRand() * 2*M_PI;
+                dRand = G4UniformRand();
+                dGnpX = (sqrt(dRand) * (SHELL4_DIAM/2.-GNP_DIAM/2) * cos(dTheta));
+                dGnpY = (sqrt(dRand) * (SHELL4_DIAM/2.-GNP_DIAM/2) * sin(dTheta));
+                dGnpZ = (VESSEL_HIGHT * G4UniformRand()) - VESSEL_HIGHT/2.0;
+                // Check if this GNP is in the inner shell
+                if (dGnpR <= SHELL4_DIAM)
+                    goto retry20_4;
+
+                // Check if this GNP is over-lapping an existing GNP
+                for (int nExistingGnpIdx = 0; nExistingGnpIdx < nGnpIdx; nExistingGnpIdx++)
+                {
+                    double dExistingX = aryGnpInfo[nExistingGnpIdx].dPosX;
+                    double dExistingY = aryGnpInfo[nExistingGnpIdx].dPosY;
+                    double dExistingZ = aryGnpInfo[nExistingGnpIdx].dPosZ;
+
+                    double dx = dExistingX - dGnpX;
+                    double dy = dExistingY - dGnpY;
+                    double dz = dExistingZ - dGnpZ;
+
+                    // Don't bother computing sqrt if the distance is large on any axis.
+                    //if ((fabs(dx) <= GNP_DIAM) && (fabs(dy) <= GNP_DIAM) && (fabs(dz) <= GNP_DIAM))
+                    if (fabs(dx) > GNP_DIAM) continue;
+                    if (fabs(dy) > GNP_DIAM) continue;
+                    if (fabs(dz) > GNP_DIAM) continue;
+
+                    double dDist = sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dDist <= GNP_DIAM)
+                        goto retry20_4;
+                }
+            }
+            else if ((GNP_COUNT_0_10+GNP_COUNT_10_20+GNP_COUNT_20_30+GNP_COUNT_30_40) <= nGnpIdx &&
+                     nGnpIdx < (GNP_COUNT_0_10+GNP_COUNT_10_20+GNP_COUNT_20_30+GNP_COUNT_30_40+GNP_COUNT_40_50)) // Shell5
+            {
+                retry20_5:
+                // Compute a random position for the GNP
+                dTheta = G4UniformRand() * 2*M_PI;
+                dRand = G4UniformRand();
+                dGnpX = (sqrt(dRand) * (SHELL5_DIAM/2.-GNP_DIAM/2) * cos(dTheta));
+                dGnpY = (sqrt(dRand) * (SHELL5_DIAM/2.-GNP_DIAM/2) * sin(dTheta));
+                dGnpZ = (VESSEL_HIGHT * G4UniformRand()) - VESSEL_HIGHT/2.0;
+                // Check if this GNP is in the inner shell
+                if (dGnpR <= SHELL5_DIAM)
+                    goto retry20_5;
+
+                // Check if this GNP is over-lapping an existing GNP
+                for (int nExistingGnpIdx = 0; nExistingGnpIdx < nGnpIdx; nExistingGnpIdx++)
+                {
+                    double dExistingX = aryGnpInfo[nExistingGnpIdx].dPosX;
+                    double dExistingY = aryGnpInfo[nExistingGnpIdx].dPosY;
+                    double dExistingZ = aryGnpInfo[nExistingGnpIdx].dPosZ;
+
+                    double dx = dExistingX - dGnpX;
+                    double dy = dExistingY - dGnpY;
+                    double dz = dExistingZ - dGnpZ;
+
+                    // Don't bother computing sqrt if the distance is large on any axis.
+                    //if ((fabs(dx) <= GNP_DIAM) && (fabs(dy) <= GNP_DIAM) && (fabs(dz) <= GNP_DIAM))
+                    if (fabs(dx) > GNP_DIAM) continue;
+                    if (fabs(dy) > GNP_DIAM) continue;
+                    if (fabs(dz) > GNP_DIAM) continue;
+
+                    double dDist = sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dDist <= GNP_DIAM)
+                        goto retry20_5;
+                }
+            }
+            else { G4cout << "Shell index error!!" << G4endl;}
+
+            printf("%d (%le, %le, %le)\n", nGnpIdx, dGnpX, dGnpY, dGnpZ);
+
+            int nCopyNumber = nGnpIdx;
+            new G4PVPlacement(0, G4ThreeVector(dGnpX, dGnpY, dGnpZ), pGnpLog, "GnpPhys", pWorldLogic, false, nCopyNumber);
+            pGnpLog->SetVisAttributes(pVisAttributesGold);
+
+            aryGnpInfo[nGnpIdx].dPosX = dGnpX;
+            aryGnpInfo[nGnpIdx].dPosY = dGnpY;
+            aryGnpInfo[nGnpIdx].dPosZ = dGnpZ;
+        }
+    }
+    if (GNP_DIAM == 100 * nm)
+    {
+        for (int nGnpIdx = 0; nGnpIdx < m_nGnpCount; nGnpIdx++)
+        {
+            double dTheta, dRand, dGnpX, dGnpY, dGnpZ; //Declear to use at the end "fprintf()"
+            double dGnpR; // Radial Direction
+
+            G4int GNP_COUNT_0_10 = GNP_COUNT*SHELL_FRC100NM_16HPI_0_10;
+            G4int GNP_COUNT_10_20 = GNP_COUNT*SHELL_FRC100NM_16HPI_10_20;
+            G4int GNP_COUNT_20_30 = GNP_COUNT*SHELL_FRC100NM_16HPI_20_30;
+            G4int GNP_COUNT_30_40 = GNP_COUNT*SHELL_FRC100NM_16HPI_30_40;
+            G4int GNP_COUNT_40_50 = GNP_COUNT*SHELL_FRC100NM_16HPI_40_50;
+
+            if (0 <= nGnpIdx && nGnpIdx < GNP_COUNT_0_10) // Shell1
+            {
+                retry100_1:
+                // Compute a random position for the GNP
+                dTheta = G4UniformRand() * 2*M_PI;
+                dRand = G4UniformRand();
+                dGnpX = (sqrt(dRand) * (SHELL1_DIAM/2.-GNP_DIAM/2) * cos(dTheta));
+                dGnpY = (sqrt(dRand) * (SHELL1_DIAM/2.-GNP_DIAM/2) * sin(dTheta));
+                dGnpZ = (VESSEL_HIGHT * G4UniformRand()) - VESSEL_HIGHT/2.0;
+
+                // Check if this GNP is over-lapping an existing GNP
+                for (int nExistingGnpIdx = 0; nExistingGnpIdx < nGnpIdx; nExistingGnpIdx++)
+                {
+                    double dExistingX = aryGnpInfo[nExistingGnpIdx].dPosX;
+                    double dExistingY = aryGnpInfo[nExistingGnpIdx].dPosY;
+                    double dExistingZ = aryGnpInfo[nExistingGnpIdx].dPosZ;
+
+                    double dx = dExistingX - dGnpX;
+                    double dy = dExistingY - dGnpY;
+                    double dz = dExistingZ - dGnpZ;
+
+                    // Don't bother computing sqrt if the distance is large on any axis.
+                    //if ((fabs(dx) <= GNP_DIAM) && (fabs(dy) <= GNP_DIAM) && (fabs(dz) <= GNP_DIAM))
+                    if (fabs(dx) > GNP_DIAM) continue;
+                    if (fabs(dy) > GNP_DIAM) continue;
+                    if (fabs(dz) > GNP_DIAM) continue;
+
+                    double dDist = sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dDist <= GNP_DIAM)
+                        goto retry100_1;
+                }
+            }
+            else if (GNP_COUNT_0_10 <= nGnpIdx && nGnpIdx < (GNP_COUNT_0_10 + GNP_COUNT_10_20)) // Shell2
+            {
+                retry100_2:
+                // Compute a random position for the GNP
+                dTheta = G4UniformRand() * 2*M_PI;
+                dRand = G4UniformRand();
+                dGnpX = (sqrt(dRand) * (SHELL2_DIAM/2.-GNP_DIAM/2) * cos(dTheta));
+                dGnpY = (sqrt(dRand) * (SHELL2_DIAM/2.-GNP_DIAM/2) * sin(dTheta));
+                dGnpZ = (VESSEL_HIGHT * G4UniformRand()) - VESSEL_HIGHT/2.0;
+                dGnpR = sqrt(dGnpX*dGnpX + dGnpY*dGnpY)/um;
+                // Check if this GNP is in the inner shell
+                if (dGnpR <= SHELL1_DIAM/2.)
+                    goto retry100_2;
+
+                // Check if this GNP is over-lapping an existing GNP
+                for (int nExistingGnpIdx = 0; nExistingGnpIdx < nGnpIdx; nExistingGnpIdx++)
+                {
+                    double dExistingX = aryGnpInfo[nExistingGnpIdx].dPosX;
+                    double dExistingY = aryGnpInfo[nExistingGnpIdx].dPosY;
+                    double dExistingZ = aryGnpInfo[nExistingGnpIdx].dPosZ;
+
+                    double dx = dExistingX - dGnpX;
+                    double dy = dExistingY - dGnpY;
+                    double dz = dExistingZ - dGnpZ;
+
+                    double dDist = sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dDist <= GNP_DIAM)
+                        goto retry100_2;
+                }
+            }
+            else if ((GNP_COUNT_0_10 + GNP_COUNT_10_20) <= nGnpIdx &&
+                     nGnpIdx < (GNP_COUNT_0_10+GNP_COUNT_10_20+GNP_COUNT_20_30)) // Shell3
+            {
+                retry100_3:
+                // Compute a random position for the GNP
+                dTheta = G4UniformRand() * 2*M_PI;
+                dRand = G4UniformRand();
+                dGnpX = (sqrt(dRand) * (SHELL3_DIAM/2.-GNP_DIAM/2) * cos(dTheta));
+                dGnpY = (sqrt(dRand) * (SHELL3_DIAM/2.-GNP_DIAM/2) * sin(dTheta));
+                dGnpZ = (VESSEL_HIGHT * G4UniformRand()) - VESSEL_HIGHT/2.0;
+                // Check if this GNP is in the inner shell
+                if (dGnpR <= SHELL3_DIAM)
+                    goto retry100_3;
+
+                // Check if this GNP is over-lapping an existing GNP
+                for (int nExistingGnpIdx = 0; nExistingGnpIdx < nGnpIdx; nExistingGnpIdx++)
+                {
+                    double dExistingX = aryGnpInfo[nExistingGnpIdx].dPosX;
+                    double dExistingY = aryGnpInfo[nExistingGnpIdx].dPosY;
+                    double dExistingZ = aryGnpInfo[nExistingGnpIdx].dPosZ;
+
+                    double dx = dExistingX - dGnpX;
+                    double dy = dExistingY - dGnpY;
+                    double dz = dExistingZ - dGnpZ;
+
+                    // Don't bother computing sqrt if the distance is large on any axis.
+                    //if ((fabs(dx) <= GNP_DIAM) && (fabs(dy) <= GNP_DIAM) && (fabs(dz) <= GNP_DIAM))
+                    if (fabs(dx) > GNP_DIAM) continue;
+                    if (fabs(dy) > GNP_DIAM) continue;
+                    if (fabs(dz) > GNP_DIAM) continue;
+
+                    double dDist = sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dDist <= GNP_DIAM)
+                        goto retry100_3;
+                }
+            }
+            else if ((GNP_COUNT_0_10+GNP_COUNT_10_20+GNP_COUNT_20_30) <= nGnpIdx &&
+                     nGnpIdx < (GNP_COUNT_0_10+GNP_COUNT_10_20+GNP_COUNT_20_30+GNP_COUNT_30_40)) // Shell4
+            {
+                retry100_4:
+                // Compute a random position for the GNP
+                dTheta = G4UniformRand() * 2*M_PI;
+                dRand = G4UniformRand();
+                dGnpX = (sqrt(dRand) * (SHELL4_DIAM/2.-GNP_DIAM/2) * cos(dTheta));
+                dGnpY = (sqrt(dRand) * (SHELL4_DIAM/2.-GNP_DIAM/2) * sin(dTheta));
+                dGnpZ = (VESSEL_HIGHT * G4UniformRand()) - VESSEL_HIGHT/2.0;
+                // Check if this GNP is in the inner shell
+                if (dGnpR <= SHELL4_DIAM)
+                    goto retry100_4;
+
+                // Check if this GNP is over-lapping an existing GNP
+                for (int nExistingGnpIdx = 0; nExistingGnpIdx < nGnpIdx; nExistingGnpIdx++)
+                {
+                    double dExistingX = aryGnpInfo[nExistingGnpIdx].dPosX;
+                    double dExistingY = aryGnpInfo[nExistingGnpIdx].dPosY;
+                    double dExistingZ = aryGnpInfo[nExistingGnpIdx].dPosZ;
+
+                    double dx = dExistingX - dGnpX;
+                    double dy = dExistingY - dGnpY;
+                    double dz = dExistingZ - dGnpZ;
+
+                    // Don't bother computing sqrt if the distance is large on any axis.
+                    //if ((fabs(dx) <= GNP_DIAM) && (fabs(dy) <= GNP_DIAM) && (fabs(dz) <= GNP_DIAM))
+                    if (fabs(dx) > GNP_DIAM) continue;
+                    if (fabs(dy) > GNP_DIAM) continue;
+                    if (fabs(dz) > GNP_DIAM) continue;
+
+                    double dDist = sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dDist <= GNP_DIAM)
+                        goto retry100_4;
+                }
+            }
+            else if ((GNP_COUNT_0_10+GNP_COUNT_10_20+GNP_COUNT_20_30+GNP_COUNT_30_40) <= nGnpIdx &&
+                     nGnpIdx < (GNP_COUNT_0_10+GNP_COUNT_10_20+GNP_COUNT_20_30+GNP_COUNT_30_40+GNP_COUNT_40_50)) // Shell5
+            {
+                retry100_5:
+                // Compute a random position for the GNP
+                dTheta = G4UniformRand() * 2*M_PI;
+                dRand = G4UniformRand();
+                dGnpX = (sqrt(dRand) * (SHELL5_DIAM/2.-GNP_DIAM/2) * cos(dTheta));
+                dGnpY = (sqrt(dRand) * (SHELL5_DIAM/2.-GNP_DIAM/2) * sin(dTheta));
+                dGnpZ = (VESSEL_HIGHT * G4UniformRand()) - VESSEL_HIGHT/2.0;
+                // Check if this GNP is in the inner shell
+                if (dGnpR <= SHELL5_DIAM)
+                    goto retry100_5;
+
+                // Check if this GNP is over-lapping an existing GNP
+                for (int nExistingGnpIdx = 0; nExistingGnpIdx < nGnpIdx; nExistingGnpIdx++)
+                {
+                    double dExistingX = aryGnpInfo[nExistingGnpIdx].dPosX;
+                    double dExistingY = aryGnpInfo[nExistingGnpIdx].dPosY;
+                    double dExistingZ = aryGnpInfo[nExistingGnpIdx].dPosZ;
+
+                    double dx = dExistingX - dGnpX;
+                    double dy = dExistingY - dGnpY;
+                    double dz = dExistingZ - dGnpZ;
+
+                    // Don't bother computing sqrt if the distance is large on any axis.
+                    //if ((fabs(dx) <= GNP_DIAM) && (fabs(dy) <= GNP_DIAM) && (fabs(dz) <= GNP_DIAM))
+                    if (fabs(dx) > GNP_DIAM) continue;
+                    if (fabs(dy) > GNP_DIAM) continue;
+                    if (fabs(dz) > GNP_DIAM) continue;
+
+                    double dDist = sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dDist <= GNP_DIAM)
+                        goto retry100_5;
+                }
+            }
+            else { G4cout << "Shell index error!!" << G4endl;}
+
+            printf("%d (%le, %le, %le)\n", nGnpIdx, dGnpX, dGnpY, dGnpZ);
+
+            int nCopyNumber = nGnpIdx;
+            new G4PVPlacement(0, G4ThreeVector(dGnpX, dGnpY, dGnpZ), pGnpLog, "GnpPhys", pWorldLogic, false, nCopyNumber);
+            pGnpLog->SetVisAttributes(pVisAttributesGold);
+
+            aryGnpInfo[nGnpIdx].dPosX = dGnpX;
+            aryGnpInfo[nGnpIdx].dPosY = dGnpY;
+            aryGnpInfo[nGnpIdx].dPosZ = dGnpZ;
+        }
+    }
+//    FILE* fp =fopen("position.txt", "wt");
+//    for (int i=0; i<60; i++)
+//    {
+//        printf("%d %d\n", i, ary[i]);
+//        fprintf(fp, "%d %d\n", i, ary[i]);
+//    }
+//    fclose(fp);
+    delete [] aryGnpInfo;
+}
+
+
+///////////////////////////24HPI////////////////////////////////////////
+// Distribute GNP with migration after 24 hour post injection (24HPI)
+void BGMSCDetectorConstruction::DistributeGnps24HPI(G4LogicalVolume *pWorldLogic)
+{
+    G4Material *pMaterialWater = G4NistManager::Instance()->FindOrBuildMaterial("G4_WATER");
+    G4Material *pMaterialGold = G4NistManager::Instance()->FindOrBuildMaterial("G4_Au");
+    assert(pMaterialWater != NULL);
+    assert(pMaterialGold != NULL);
+
+   // m_nGnpCount = GNP_COUNT*(SHELL_FRC100NM_24HPI_0_10+SHELL_FRC100NM_24HPI_10_20+SHELL_FRC100NM_24HPI_20_30
+   //                          +SHELL_FRC100NM_24HPI_30_40+SHELL_FRC100NM_24HPI_40_50);
+
+    struct SGnpInfo
+    {
+        double dPosX;
+        double dPosY;
+        double dPosZ;
+    };
+
+    SGnpInfo *aryGnpInfo = new SGnpInfo [m_nGnpCount];
+
+    // Set visible attributes
+    G4VisAttributes* pVisAttributesGold = new G4VisAttributes;
+    pVisAttributesGold->SetForceWireframe(true);
+    pVisAttributesGold->SetForceAuxEdgeVisible(true);
+    pVisAttributesGold->SetForceSolid(false);
+    pVisAttributesGold->SetVisibility(true);
+    pVisAttributesGold->SetColor(255. / 255., 215. / 255., 0.); // gold
+
+    // Create the Sphere object
+    G4Sphere* pGnpSphere = new G4Sphere("GNP", 0., GNP_DIAM / 2, 0*deg, 360*deg, 0*deg, 180*deg);
+    G4LogicalVolume *pGnpLog = new G4LogicalVolume(pGnpSphere, pMaterialGold, "GNPLogic");
+
+    printf("Distributing GNPs randomly...\n");
+    G4int ary[360]={0};
+
+    if (GNP_DIAM == 20 * nm)
+    {
+        for (int nGnpIdx = 0; nGnpIdx < m_nGnpCount; nGnpIdx++)
+        {
+            double dTheta, dRand, dGnpX, dGnpY, dGnpZ; //Declear to use at the end "fprintf()"
+            double dGnpR; // Radial Direction
+
+            G4int GNP_COUNT_0_10 = GNP_COUNT*SHELL_FRC20NM_24HPI_0_10;
+            G4int GNP_COUNT_10_20 = GNP_COUNT*SHELL_FRC20NM_24HPI_10_20;
+            G4int GNP_COUNT_20_30 = GNP_COUNT*SHELL_FRC20NM_24HPI_20_30;
+            G4int GNP_COUNT_30_40 = GNP_COUNT*SHELL_FRC20NM_24HPI_30_40;
+            G4int GNP_COUNT_40_50 = GNP_COUNT*SHELL_FRC20NM_24HPI_40_50;
+
+            if (0 <= nGnpIdx && nGnpIdx < GNP_COUNT_0_10) // Shell1
+            {
+                retry20_1:
+                // Compute a random position for the GNP
+                dTheta = G4UniformRand() * 2*M_PI;
+                dRand = G4UniformRand();
+                dGnpX = (sqrt(dRand) * (SHELL1_DIAM/2.-GNP_DIAM/2) * cos(dTheta));
+                dGnpY = (sqrt(dRand) * (SHELL1_DIAM/2.-GNP_DIAM/2) * sin(dTheta));
+                dGnpZ = (VESSEL_HIGHT * G4UniformRand()) - VESSEL_HIGHT/2.0;
+
+                // Check if this GNP is over-lapping an existing GNP
+                for (int nExistingGnpIdx = 0; nExistingGnpIdx < nGnpIdx; nExistingGnpIdx++)
+                {
+                    double dExistingX = aryGnpInfo[nExistingGnpIdx].dPosX;
+                    double dExistingY = aryGnpInfo[nExistingGnpIdx].dPosY;
+                    double dExistingZ = aryGnpInfo[nExistingGnpIdx].dPosZ;
+
+                    double dx = dExistingX - dGnpX;
+                    double dy = dExistingY - dGnpY;
+                    double dz = dExistingZ - dGnpZ;
+
+                    // Don't bother computing sqrt if the distance is large on any axis.
+                    //if ((fabs(dx) <= GNP_DIAM) && (fabs(dy) <= GNP_DIAM) && (fabs(dz) <= GNP_DIAM))
+                    if (fabs(dx) > GNP_DIAM) continue;
+                    if (fabs(dy) > GNP_DIAM) continue;
+                    if (fabs(dz) > GNP_DIAM) continue;
+
+                    double dDist = sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dDist <= GNP_DIAM)
+                        goto retry20_1;
+                }
+            }
+            else if (GNP_COUNT_0_10 <= nGnpIdx && nGnpIdx < (GNP_COUNT_0_10 + GNP_COUNT_10_20)) // Shell2
+            {
+                retry20_2:
+                // Compute a random position for the GNP
+                dTheta = G4UniformRand() * 2*M_PI;
+                dRand = G4UniformRand();
+                dGnpX = (sqrt(dRand) * (SHELL2_DIAM/2.-GNP_DIAM/2) * cos(dTheta));
+                dGnpY = (sqrt(dRand) * (SHELL2_DIAM/2.-GNP_DIAM/2) * sin(dTheta));
+                dGnpZ = (VESSEL_HIGHT * G4UniformRand()) - VESSEL_HIGHT/2.0;
+                dGnpR = sqrt(dGnpX*dGnpX + dGnpY*dGnpY)/um;
+                // Check if this GNP is in the inner shell
+                if (dGnpR <= SHELL1_DIAM/2.)
+                    goto retry20_2;
+
+                // Check if this GNP is over-lapping an existing GNP
+                for (int nExistingGnpIdx = 0; nExistingGnpIdx < nGnpIdx; nExistingGnpIdx++)
+                {
+                    double dExistingX = aryGnpInfo[nExistingGnpIdx].dPosX;
+                    double dExistingY = aryGnpInfo[nExistingGnpIdx].dPosY;
+                    double dExistingZ = aryGnpInfo[nExistingGnpIdx].dPosZ;
+
+                    double dx = dExistingX - dGnpX;
+                    double dy = dExistingY - dGnpY;
+                    double dz = dExistingZ - dGnpZ;
+
+                    double dDist = sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dDist <= GNP_DIAM)
+                        goto retry20_2;
+                }
+            }
+            else if ((GNP_COUNT_0_10 + GNP_COUNT_10_20) <= nGnpIdx &&
+                     nGnpIdx < (GNP_COUNT_0_10+GNP_COUNT_10_20+GNP_COUNT_20_30)) // Shell3
+            {
+                retry20_3:
+                // Compute a random position for the GNP
+                dTheta = G4UniformRand() * 2*M_PI;
+                dRand = G4UniformRand();
+                dGnpX = (sqrt(dRand) * (SHELL3_DIAM/2.-GNP_DIAM/2) * cos(dTheta));
+                dGnpY = (sqrt(dRand) * (SHELL3_DIAM/2.-GNP_DIAM/2) * sin(dTheta));
+                dGnpZ = (VESSEL_HIGHT * G4UniformRand()) - VESSEL_HIGHT/2.0;
+                // Check if this GNP is in the inner shell
+                if (dGnpR <= SHELL3_DIAM)
+                    goto retry20_3;
+
+                // Check if this GNP is over-lapping an existing GNP
+                for (int nExistingGnpIdx = 0; nExistingGnpIdx < nGnpIdx; nExistingGnpIdx++)
+                {
+                    double dExistingX = aryGnpInfo[nExistingGnpIdx].dPosX;
+                    double dExistingY = aryGnpInfo[nExistingGnpIdx].dPosY;
+                    double dExistingZ = aryGnpInfo[nExistingGnpIdx].dPosZ;
+
+                    double dx = dExistingX - dGnpX;
+                    double dy = dExistingY - dGnpY;
+                    double dz = dExistingZ - dGnpZ;
+
+                    // Don't bother computing sqrt if the distance is large on any axis.
+                    //if ((fabs(dx) <= GNP_DIAM) && (fabs(dy) <= GNP_DIAM) && (fabs(dz) <= GNP_DIAM))
+                    if (fabs(dx) > GNP_DIAM) continue;
+                    if (fabs(dy) > GNP_DIAM) continue;
+                    if (fabs(dz) > GNP_DIAM) continue;
+
+                    double dDist = sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dDist <= GNP_DIAM)
+                        goto retry20_3;
+                }
+            }
+            else if ((GNP_COUNT_0_10+GNP_COUNT_10_20+GNP_COUNT_20_30) <= nGnpIdx &&
+                     nGnpIdx < (GNP_COUNT_0_10+GNP_COUNT_10_20+GNP_COUNT_20_30+GNP_COUNT_30_40)) // Shell4
+            {
+                retry20_4:
+                // Compute a random position for the GNP
+                dTheta = G4UniformRand() * 2*M_PI;
+                dRand = G4UniformRand();
+                dGnpX = (sqrt(dRand) * (SHELL4_DIAM/2.-GNP_DIAM/2) * cos(dTheta));
+                dGnpY = (sqrt(dRand) * (SHELL4_DIAM/2.-GNP_DIAM/2) * sin(dTheta));
+                dGnpZ = (VESSEL_HIGHT * G4UniformRand()) - VESSEL_HIGHT/2.0;
+                // Check if this GNP is in the inner shell
+                if (dGnpR <= SHELL4_DIAM)
+                    goto retry20_4;
+
+                // Check if this GNP is over-lapping an existing GNP
+                for (int nExistingGnpIdx = 0; nExistingGnpIdx < nGnpIdx; nExistingGnpIdx++)
+                {
+                    double dExistingX = aryGnpInfo[nExistingGnpIdx].dPosX;
+                    double dExistingY = aryGnpInfo[nExistingGnpIdx].dPosY;
+                    double dExistingZ = aryGnpInfo[nExistingGnpIdx].dPosZ;
+
+                    double dx = dExistingX - dGnpX;
+                    double dy = dExistingY - dGnpY;
+                    double dz = dExistingZ - dGnpZ;
+
+                    // Don't bother computing sqrt if the distance is large on any axis.
+                    //if ((fabs(dx) <= GNP_DIAM) && (fabs(dy) <= GNP_DIAM) && (fabs(dz) <= GNP_DIAM))
+                    if (fabs(dx) > GNP_DIAM) continue;
+                    if (fabs(dy) > GNP_DIAM) continue;
+                    if (fabs(dz) > GNP_DIAM) continue;
+
+                    double dDist = sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dDist <= GNP_DIAM)
+                        goto retry20_4;
+                }
+            }
+            else if ((GNP_COUNT_0_10+GNP_COUNT_10_20+GNP_COUNT_20_30+GNP_COUNT_30_40) <= nGnpIdx &&
+                     nGnpIdx < (GNP_COUNT_0_10+GNP_COUNT_10_20+GNP_COUNT_20_30+GNP_COUNT_30_40+GNP_COUNT_40_50)) // Shell5
+            {
+                retry20_5:
+                // Compute a random position for the GNP
+                dTheta = G4UniformRand() * 2*M_PI;
+                dRand = G4UniformRand();
+                dGnpX = (sqrt(dRand) * (SHELL5_DIAM/2.-GNP_DIAM/2) * cos(dTheta));
+                dGnpY = (sqrt(dRand) * (SHELL5_DIAM/2.-GNP_DIAM/2) * sin(dTheta));
+                dGnpZ = (VESSEL_HIGHT * G4UniformRand()) - VESSEL_HIGHT/2.0;
+                // Check if this GNP is in the inner shell
+                if (dGnpR <= SHELL5_DIAM)
+                    goto retry20_5;
+
+                // Check if this GNP is over-lapping an existing GNP
+                for (int nExistingGnpIdx = 0; nExistingGnpIdx < nGnpIdx; nExistingGnpIdx++)
+                {
+                    double dExistingX = aryGnpInfo[nExistingGnpIdx].dPosX;
+                    double dExistingY = aryGnpInfo[nExistingGnpIdx].dPosY;
+                    double dExistingZ = aryGnpInfo[nExistingGnpIdx].dPosZ;
+
+                    double dx = dExistingX - dGnpX;
+                    double dy = dExistingY - dGnpY;
+                    double dz = dExistingZ - dGnpZ;
+
+                    // Don't bother computing sqrt if the distance is large on any axis.
+                    //if ((fabs(dx) <= GNP_DIAM) && (fabs(dy) <= GNP_DIAM) && (fabs(dz) <= GNP_DIAM))
+                    if (fabs(dx) > GNP_DIAM) continue;
+                    if (fabs(dy) > GNP_DIAM) continue;
+                    if (fabs(dz) > GNP_DIAM) continue;
+
+                    double dDist = sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dDist <= GNP_DIAM)
+                        goto retry20_5;
+                }
+            }
+            else { G4cout << "Shell index error!!" << G4endl;}
+
+            printf("%d (%le, %le, %le)\n", nGnpIdx, dGnpX, dGnpY, dGnpZ);
+
+            int nCopyNumber = nGnpIdx;
+            new G4PVPlacement(0, G4ThreeVector(dGnpX, dGnpY, dGnpZ), pGnpLog, "GnpPhys", pWorldLogic, false, nCopyNumber);
+            pGnpLog->SetVisAttributes(pVisAttributesGold);
+
+            aryGnpInfo[nGnpIdx].dPosX = dGnpX;
+            aryGnpInfo[nGnpIdx].dPosY = dGnpY;
+            aryGnpInfo[nGnpIdx].dPosZ = dGnpZ;
+        }
+    }
+
+    if (GNP_DIAM == 100 * nm)
+    {
+        for (int nGnpIdx = 0; nGnpIdx < m_nGnpCount; nGnpIdx++)
+        {
+            double dTheta, dRand, dGnpX, dGnpY, dGnpZ; //Declear to use at the end "fprintf()"
+            double dGnpR; // Radial Direction
+
+            G4int GNP_COUNT_0_10 = GNP_COUNT*SHELL_FRC100NM_24HPI_0_10;
+            G4int GNP_COUNT_10_20 = GNP_COUNT*SHELL_FRC100NM_24HPI_10_20;
+            G4int GNP_COUNT_20_30 = GNP_COUNT*SHELL_FRC100NM_24HPI_20_30;
+            G4int GNP_COUNT_30_40 = GNP_COUNT*SHELL_FRC100NM_24HPI_30_40;
+            G4int GNP_COUNT_40_50 = GNP_COUNT*SHELL_FRC100NM_24HPI_40_50;
+
+            if (0 <= nGnpIdx && nGnpIdx < GNP_COUNT_0_10) // Shell1
+            {
+                retry100_1:
+                // Compute a random position for the GNP
+                dTheta = G4UniformRand() * 2*M_PI;
+                dRand = G4UniformRand();
+                dGnpX = (sqrt(dRand) * (SHELL1_DIAM/2.-GNP_DIAM/2) * cos(dTheta));
+                dGnpY = (sqrt(dRand) * (SHELL1_DIAM/2.-GNP_DIAM/2) * sin(dTheta));
+                dGnpZ = (VESSEL_HIGHT * G4UniformRand()) - VESSEL_HIGHT/2.0;
+
+                // Check if this GNP is over-lapping an existing GNP
+                for (int nExistingGnpIdx = 0; nExistingGnpIdx < nGnpIdx; nExistingGnpIdx++)
+                {
+                    double dExistingX = aryGnpInfo[nExistingGnpIdx].dPosX;
+                    double dExistingY = aryGnpInfo[nExistingGnpIdx].dPosY;
+                    double dExistingZ = aryGnpInfo[nExistingGnpIdx].dPosZ;
+
+                    double dx = dExistingX - dGnpX;
+                    double dy = dExistingY - dGnpY;
+                    double dz = dExistingZ - dGnpZ;
+
+                    // Don't bother computing sqrt if the distance is large on any axis.
+                    //if ((fabs(dx) <= GNP_DIAM) && (fabs(dy) <= GNP_DIAM) && (fabs(dz) <= GNP_DIAM))
+                    if (fabs(dx) > GNP_DIAM) continue;
+                    if (fabs(dy) > GNP_DIAM) continue;
+                    if (fabs(dz) > GNP_DIAM) continue;
+
+                    double dDist = sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dDist <= GNP_DIAM)
+                        goto retry100_1;
+                }
+            }
+            else if (GNP_COUNT_0_10 <= nGnpIdx && nGnpIdx < (GNP_COUNT_0_10 + GNP_COUNT_10_20)) // Shell2
+            {
+                retry100_2:
+                // Compute a random position for the GNP
+                dTheta = G4UniformRand() * 2*M_PI;
+                dRand = G4UniformRand();
+                dGnpX = (sqrt(dRand) * (SHELL2_DIAM/2.-GNP_DIAM/2) * cos(dTheta));
+                dGnpY = (sqrt(dRand) * (SHELL2_DIAM/2.-GNP_DIAM/2) * sin(dTheta));
+                dGnpZ = (VESSEL_HIGHT * G4UniformRand()) - VESSEL_HIGHT/2.0;
+                dGnpR = sqrt(dGnpX*dGnpX + dGnpY*dGnpY)/um;
+                // Check if this GNP is in the inner shell
+                if (dGnpR <= SHELL1_DIAM/2.)
+                    goto retry100_2;
+
+                // Check if this GNP is over-lapping an existing GNP
+                for (int nExistingGnpIdx = 0; nExistingGnpIdx < nGnpIdx; nExistingGnpIdx++)
+                {
+                    double dExistingX = aryGnpInfo[nExistingGnpIdx].dPosX;
+                    double dExistingY = aryGnpInfo[nExistingGnpIdx].dPosY;
+                    double dExistingZ = aryGnpInfo[nExistingGnpIdx].dPosZ;
+
+                    double dx = dExistingX - dGnpX;
+                    double dy = dExistingY - dGnpY;
+                    double dz = dExistingZ - dGnpZ;
+
+                    double dDist = sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dDist <= GNP_DIAM)
+                        goto retry100_2;
+                }
+            }
+            else if ((GNP_COUNT_0_10 + GNP_COUNT_10_20) <= nGnpIdx &&
+                     nGnpIdx < (GNP_COUNT_0_10+GNP_COUNT_10_20+GNP_COUNT_20_30)) // Shell3
+            {
+                retry100_3:
+                // Compute a random position for the GNP
+                dTheta = G4UniformRand() * 2*M_PI;
+                dRand = G4UniformRand();
+                dGnpX = (sqrt(dRand) * (SHELL3_DIAM/2.-GNP_DIAM/2) * cos(dTheta));
+                dGnpY = (sqrt(dRand) * (SHELL3_DIAM/2.-GNP_DIAM/2) * sin(dTheta));
+                dGnpZ = (VESSEL_HIGHT * G4UniformRand()) - VESSEL_HIGHT/2.0;
+                // Check if this GNP is in the inner shell
+                if (dGnpR <= SHELL3_DIAM)
+                    goto retry100_3;
+
+                // Check if this GNP is over-lapping an existing GNP
+                for (int nExistingGnpIdx = 0; nExistingGnpIdx < nGnpIdx; nExistingGnpIdx++)
+                {
+                    double dExistingX = aryGnpInfo[nExistingGnpIdx].dPosX;
+                    double dExistingY = aryGnpInfo[nExistingGnpIdx].dPosY;
+                    double dExistingZ = aryGnpInfo[nExistingGnpIdx].dPosZ;
+
+                    double dx = dExistingX - dGnpX;
+                    double dy = dExistingY - dGnpY;
+                    double dz = dExistingZ - dGnpZ;
+
+                    // Don't bother computing sqrt if the distance is large on any axis.
+                    //if ((fabs(dx) <= GNP_DIAM) && (fabs(dy) <= GNP_DIAM) && (fabs(dz) <= GNP_DIAM))
+                    if (fabs(dx) > GNP_DIAM) continue;
+                    if (fabs(dy) > GNP_DIAM) continue;
+                    if (fabs(dz) > GNP_DIAM) continue;
+
+                    double dDist = sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dDist <= GNP_DIAM)
+                        goto retry100_3;
+                }
+            }
+            else if ((GNP_COUNT_0_10+GNP_COUNT_10_20+GNP_COUNT_20_30) <= nGnpIdx &&
+                     nGnpIdx < (GNP_COUNT_0_10+GNP_COUNT_10_20+GNP_COUNT_20_30+GNP_COUNT_30_40)) // Shell4
+            {
+                retry100_4:
+                // Compute a random position for the GNP
+                dTheta = G4UniformRand() * 2*M_PI;
+                dRand = G4UniformRand();
+                dGnpX = (sqrt(dRand) * (SHELL4_DIAM/2.-GNP_DIAM/2) * cos(dTheta));
+                dGnpY = (sqrt(dRand) * (SHELL4_DIAM/2.-GNP_DIAM/2) * sin(dTheta));
+                dGnpZ = (VESSEL_HIGHT * G4UniformRand()) - VESSEL_HIGHT/2.0;
+                // Check if this GNP is in the inner shell
+                if (dGnpR <= SHELL4_DIAM)
+                    goto retry100_4;
+
+                // Check if this GNP is over-lapping an existing GNP
+                for (int nExistingGnpIdx = 0; nExistingGnpIdx < nGnpIdx; nExistingGnpIdx++)
+                {
+                    double dExistingX = aryGnpInfo[nExistingGnpIdx].dPosX;
+                    double dExistingY = aryGnpInfo[nExistingGnpIdx].dPosY;
+                    double dExistingZ = aryGnpInfo[nExistingGnpIdx].dPosZ;
+
+                    double dx = dExistingX - dGnpX;
+                    double dy = dExistingY - dGnpY;
+                    double dz = dExistingZ - dGnpZ;
+
+                    // Don't bother computing sqrt if the distance is large on any axis.
+                    //if ((fabs(dx) <= GNP_DIAM) && (fabs(dy) <= GNP_DIAM) && (fabs(dz) <= GNP_DIAM))
+                    if (fabs(dx) > GNP_DIAM) continue;
+                    if (fabs(dy) > GNP_DIAM) continue;
+                    if (fabs(dz) > GNP_DIAM) continue;
+
+                    double dDist = sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dDist <= GNP_DIAM)
+                        goto retry100_4;
+                }
+            }
+            else if ((GNP_COUNT_0_10+GNP_COUNT_10_20+GNP_COUNT_20_30+GNP_COUNT_30_40) <= nGnpIdx &&
+                     nGnpIdx < (GNP_COUNT_0_10+GNP_COUNT_10_20+GNP_COUNT_20_30+GNP_COUNT_30_40+GNP_COUNT_40_50)) // Shell5
+            {
+                retry100_5:
+                // Compute a random position for the GNP
+                dTheta = G4UniformRand() * 2*M_PI;
+                dRand = G4UniformRand();
+                dGnpX = (sqrt(dRand) * (SHELL5_DIAM/2.-GNP_DIAM/2) * cos(dTheta));
+                dGnpY = (sqrt(dRand) * (SHELL5_DIAM/2.-GNP_DIAM/2) * sin(dTheta));
+                dGnpZ = (VESSEL_HIGHT * G4UniformRand()) - VESSEL_HIGHT/2.0;
+                // Check if this GNP is in the inner shell
+                if (dGnpR <= SHELL5_DIAM)
+                    goto retry100_5;
+
+                // Check if this GNP is over-lapping an existing GNP
+                for (int nExistingGnpIdx = 0; nExistingGnpIdx < nGnpIdx; nExistingGnpIdx++)
+                {
+                    double dExistingX = aryGnpInfo[nExistingGnpIdx].dPosX;
+                    double dExistingY = aryGnpInfo[nExistingGnpIdx].dPosY;
+                    double dExistingZ = aryGnpInfo[nExistingGnpIdx].dPosZ;
+
+                    double dx = dExistingX - dGnpX;
+                    double dy = dExistingY - dGnpY;
+                    double dz = dExistingZ - dGnpZ;
+
+                    // Don't bother computing sqrt if the distance is large on any axis.
+                    //if ((fabs(dx) <= GNP_DIAM) && (fabs(dy) <= GNP_DIAM) && (fabs(dz) <= GNP_DIAM))
+                    if (fabs(dx) > GNP_DIAM) continue;
+                    if (fabs(dy) > GNP_DIAM) continue;
+                    if (fabs(dz) > GNP_DIAM) continue;
+
+                    double dDist = sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dDist <= GNP_DIAM)
+                        goto retry100_5;
+                }
+            }
+            else { G4cout << "Shell index error!!" << G4endl;}
+
+            printf("%d (%le, %le, %le)\n", nGnpIdx, dGnpX, dGnpY, dGnpZ);
+
+            int nCopyNumber = nGnpIdx;
+            new G4PVPlacement(0, G4ThreeVector(dGnpX, dGnpY, dGnpZ), pGnpLog, "GnpPhys", pWorldLogic, false, nCopyNumber);
+            pGnpLog->SetVisAttributes(pVisAttributesGold);
+
+            aryGnpInfo[nGnpIdx].dPosX = dGnpX;
+            aryGnpInfo[nGnpIdx].dPosY = dGnpY;
+            aryGnpInfo[nGnpIdx].dPosZ = dGnpZ;
+        }
+    }
+//    FILE* fp =fopen("position.txt", "wt");
+//    for (int i=0; i<60; i++)
+//    {
+//        printf("%d %d\n", i, ary[i]);
+//        fprintf(fp, "%d %d\n", i, ary[i]);
+//    }
+//    fclose(fp);
+    delete [] aryGnpInfo;
+}
+
+
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 

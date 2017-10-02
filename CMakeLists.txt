@@ -1,6 +1,6 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6 FATAL_ERROR)
 
-PROJECT(RandomGold)
+PROJECT(GoldEndotherial1)
 
 FIND_PACKAGE(Geant4 REQUIRED ui_all vis_all)
 IF(NOT Geant4_FOUND)
@@ -19,6 +19,7 @@ ADD_EXECUTABLE(BYGNP BYGNP.cc ${sources} ${headers})
 TARGET_LINK_LIBRARIES(BYGNP ${Geant4_LIBRARIES})
 
 set(BYGNP_SCRIPTS
+    //init.mac
     init_vis.mac
 )
 

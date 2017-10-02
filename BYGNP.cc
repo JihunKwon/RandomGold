@@ -1,6 +1,6 @@
 //#undef G4MULTITHREADED
 
-//#undef G4VIS_USE
+#undef G4VIS_USE
 
 #include <cstdio>
 #include <ctime>
@@ -20,6 +20,7 @@
 #include "G4UIExecutive.hh"
 #endif
 
+#include "G4ScoringManager.hh"
 #include "BGMSCPhysicsList.hh"
 #include "BGMSCDetectorConstruction.hh"
 #include "BGMSCPrimaryGeneratorAction.hh"
@@ -45,35 +46,52 @@ int main(int argc,char** argv)
     runManager->SetNumberOfThreads(8);
 #else
     G4RunManager* runManager = new G4RunManager;
+
+//    // Activate UI-command based scorer
+//    G4ScoringManager* scoringManager = G4ScoringManager::GetScoringManager();
+//    scoringManager->SetVerboseLevel(1);
+
 #endif
 
     BGMSCDetectorConstruction* massWorld = new BGMSCDetectorConstruction;
     runManager->SetUserInitialization(massWorld);
 
     G4VModularPhysicsList* physicsList = new BGMSCPhysicsList;
-    physicsList->SetVerboseLevel(0);
+    physicsList->SetVerboseLevel(4);
     runManager->SetUserInitialization(physicsList);
 
     BGMSCActionInitialization* actionInit = new BGMSCActionInitialization(massWorld);
     runManager->SetUserInitialization(actionInit);
     runManager->Initialize();
 
+    // Get the pointer to the User Interface manager
     G4UImanager* UImanager = G4UImanager::GetUIpointer();
 
+//    UImanager->ApplyCommand("/tracking/verbose 1");
+//    UImanager->ApplyCommand("/testem/stepMax 5 nm");
+
+
 #ifdef G4VIS_USE
-    G4UIExecutive* ui = new G4UIExecutive(argc, argv);
-    G4VisManager* visManager = new G4VisExecutive;
-    visManager->Initialize();
-    UImanager->ApplyCommand("/control/execute init_vis.mac");
-    ui->SessionStart();
-    delete ui;
-    delete visManager;
+  G4UIExecutive* ui = new G4UIExecutive(argc, argv);
+  // Initialize visualization
+  G4VisManager* visManager = new G4VisExecutive;
+  // G4VisExecutive can take a verbosity argument - see /vis/verbose guidance.
+  visManager->Initialize();
+  UImanager->ApplyCommand("/control/execute init_vis.mac");
+  ui->SessionStart();
+  delete ui;
+  delete visManager;
 
 #endif
 
-      runManager->BeamOn(810);   //Electron 66063517
-    //  runManager->BeamOn(31420000);   //Gamma  33936483
 
-    delete runManager;
-    return 0;
+  G4UImanager* pUI = G4UImanager::GetUIpointer();
+
+  //pUI->ApplyCommand("/tracking/verbose 1");
+  pUI->ApplyCommand("/testem/stepMax 10 nm");
+
+  runManager->BeamOn(1410065407); // 25000000 1410065407
+
+  delete runManager;
+  return 0;
 }
